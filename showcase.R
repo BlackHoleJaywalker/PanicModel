@@ -131,3 +131,13 @@ lines(temp4$outmat$E, col="red")
 
 
 
+
+
+
+
+
+max(unlist(tx))
+
+
+
+

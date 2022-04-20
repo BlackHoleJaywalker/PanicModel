@@ -298,6 +298,9 @@ simPanic <- function(time, # integer vector 1:n, indicating the time interval, w
 
       if(!is.null(tx)) { # if there are interventions
 
+        # Save old value on E-parameter
+        if(day_tracker == 1) TxI4_old <- PS$E$TxI4
+
         # Intervention 1: Psychoeducation on AS
         if(day_tracker %in% tx$I1) AS <- AS*(1-PS$Tx$I123_alpha)
 
@@ -307,13 +310,8 @@ simPanic <- function(time, # integer vector 1:n, indicating the time interval, w
         # Intervention 3: Cognitive Restructuring on AS
         if(day_tracker %in% tx$I3) AS <- AS*(1-PS$Tx$I123_alpha)
 
-        # print(day_tracker)
-        # print(day_tracker %in% tx$I4)
-
         # Intervention 4: Interoceptive Exposure
         if(day_tracker %in% tx$I4) {
-
-          # browser()
 
           # 4.1 Pulse intervention on Arousal, with increasing intensity
           # Hardcoded: different intensity of pulses in the four weeks
@@ -339,8 +337,10 @@ simPanic <- function(time, # integer vector 1:n, indicating the time interval, w
           PS$Arousal$h_A_PT <- 0.25^AS - 0.1 * C
         }
 
-      } # end if: interventions
+        # At end of interventions: set E-parameter back
+        if(day_tracker == max(unlist(tx))) PS$E$TxI4 <- TxI4_old
 
+      } # end if: interventions
 
 
       # Draw noise for the next week again, remove epsilon because it's not needed
@@ -371,6 +371,7 @@ simPanic <- function(time, # integer vector 1:n, indicating the time interval, w
     if(pbar==TRUE) setTxtProgressBar(pb, obs_tracker)
 
   } # End the "while loop" that carries out simulation
+
 
   # Simulation Step 2: Specify Function's Output ---------
 
