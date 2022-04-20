@@ -1,0 +1,10 @@
+Package: PanicModel
+Type: Package
+Title: What the Package Does (Title Case)
+Version: 0.1.0
+Author: Don Robinaugh <robinaugh@gmail.com>; Jonas Haslbeck <jonashaslbeck@gmail.com>, Oisin Ryan <ryanoisin@gmail.com>
+Maintainer: Don Robinaugh <robinaugh@gmail.com>
+Description: Implementation of the computational model for Panic disorder in XXX
+License: What license is it under?
+Encoding: UTF-8
+LazyData: true
