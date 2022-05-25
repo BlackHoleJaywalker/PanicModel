@@ -10,6 +10,8 @@
 # -------- Simplest case ---------------------------------------
 # --------------------------------------------------------------
 
+
+
 temp <- simPanic(time = 0:100,
                  stepsize = .001)
 
@@ -17,6 +19,7 @@ temp$input$initial
 
 plot(temp$outmat$A, type="l")
 lines(temp$outmat$PT, col="red")
+
 
 # --------------------------------------------------------------
 # -------- Change parameters/initial values --------------------
@@ -50,7 +53,6 @@ out_det$n_panic
 
 pars_spec <- list("Tx" = list("minuteP"= 10))
 initial_spec <- list("AS" = .60)
-
 
 time <- 0:60 # 1h
 
@@ -127,6 +129,43 @@ lines(temp4$outmat$E, col="red")
 
 
 
+# --------------------------------------------------------------
+# -------- Check: variance & stepsize --------------------------
+# --------------------------------------------------------------
+
+set.seed(1)
+temp <- simPanic(time = 0:10000,
+                 stepsize = .01)
+
+plot(temp$outmat$A)
+var(temp$outmat$A)
+
+## OLD
+# stepsize = 1; var = 0.23
+# stepsize = 0.1; var = 0.30
+# stepsize = 0.01; var = 0.10
+
+## NEW
+# stepsize = 1; var = 0.23  # same, because sqrt(1/1)=1
+# stepsize = 0.1; var = 0.32
+# stepsize = 0.01; var = 1.24
+
+stepsize = .1
+sqrt(1/stepsize)
+temp$input$initial
+
+plot(temp$outmat$A, type="l")
+lines(temp$outmat$PT, col="red")
+
+# --------------------------------------------------------------
+# -------- Check: variance & stepsize; May 2nd -----------------
+# --------------------------------------------------------------
+
+set.seed(2)
+temp <- simPanic(time = 0:1000,
+                 stepsize = .001)
+plot(temp$outmat$A, type='l')
+sd(temp$outmat$A)
 
 
 
@@ -136,7 +175,13 @@ lines(temp4$outmat$E, col="red")
 
 
 
-max(unlist(tx))
+
+
+
+
+
+
+
 
 
 

@@ -1,4 +1,4 @@
-# Feb 17, 2022
+# jonashaslbeck@gmail.com; May 25, 2022
 
 simPanic <- function(time, # integer vector 1:n, indicating the time interval, where 1 is one "minute"
                      stepsize, # stepsize; <= 1
@@ -93,6 +93,7 @@ simPanic <- function(time, # integer vector 1:n, indicating the time interval, w
   # Arousal
   sigma <- 0.30 / (1 + exp(1)^(PS$N$k_AV_N * ((AV) - PS$N$h_AV_N))) + 0.50
   beta <-  sigma * sqrt(2/PS$N$lambda_N - 1/PS$N$lambda_N^2)
+  sigma <- sigma * sqrt(.001)
 
   # Initial Perceived Threat parameters - updated every hour
   PS$Arousal$k_A_PT <- 20 - 10 * 0.1^AS + 5 * C
@@ -117,23 +118,21 @@ simPanic <- function(time, # integer vector 1:n, indicating the time interval, w
   maxE <- E
   maxPT <- PT
 
-  # browser()
-
   # Draw Noise for a day at a time
   daysteps <- daydef/stepsize # how many euler steps in a day
   timepoints <- seq(time[1], max(time), by = stepsize) # what time points do all euler steps occur at?
   daypoints <- seq(time[1], max(time), by = daydef) # what time points do the day-changes occur at?
-
-  # DEVV
-  # print(daypoints)
-
 
   # if the time range doesn't encapsulate a day, re-set day_tracker
   if((daydef > range_time[2])) day_tracker <- 1
 
   # Draw noise for a day at a time
   Nvec <- c(N,rep(NA,daysteps))
-  epsilon <- rnorm(daysteps, mean = PS$N$mu_N, sd = sigma)
+
+  # epsilon <- rnorm(daysteps, mean = PS$N$mu_N, sd = sigma)
+  sigma_scaled <- sigma/sqrt(stepsize)
+  epsilon <- rnorm(daysteps, mean = PS$N$mu_N, sd = sigma_scaled)
+
   for(i in 2:(daysteps+1)){
     Nvec[i] <- ((1 - 1/PS$N$lambda_N) * (Nvec[i-1]) + beta*epsilon[i-1])
   }
@@ -205,21 +204,12 @@ simPanic <- function(time, # integer vector 1:n, indicating the time interval, w
     PT <- PTnew
     E <- Enew
 
-
-
-
-    # print(c(A, PT))
-
-    # browser()
-
     # AF updated based on current
     if(A > 0) {
       AF <- sqrt(A * PT)
     } else {
       AF <- 0
     }
-
-    # browser()
 
     # update maxAF, maxE and maxPT so far today
     if(AF > maxAF) maxAF <- AF
@@ -243,12 +233,7 @@ simPanic <- function(time, # integer vector 1:n, indicating the time interval, w
 
     # ------- Day-level: Update --------
 
-    # print(day_tracker)
-
     if(timepoints[time_tracker] == daypoints[day_tracker]) {  # Is it the end of a Day?
-
-      # DEVV
-      # print(daypoints[day_tracker])
 
       # Arousal Schema: As a function of Arousal, Perceived Threat, and Escape
       if(maxAF >= PS$TS$cr_AF){
@@ -260,7 +245,6 @@ simPanic <- function(time, # integer vector 1:n, indicating the time interval, w
                                cr_E_AS = PS$TS$cr_E_AS,
                                r_AS_a = PS$TS$r_AS_a,
                                r_AS_e = PS$TS$r_AS_e)
-
 
         # Update Escape Schema
         ES_new <- ES + d_ES_dt(ES = ES,
@@ -287,6 +271,8 @@ simPanic <- function(time, # integer vector 1:n, indicating the time interval, w
         # Update Noise draw parameters
         sigma <- 0.30 / (1 + exp(PS$N$k_AV_N * ((AV) - PS$N$h_AV_N))) + 0.50
         beta <-  sigma * sqrt(2 / PS$N$lambda_N - 1 / PS$N$lambda_N ^ 2)
+        sigma <- sigma * sqrt(.001) # May 2nd, 22: This is done so that the model is still calibrated after adding the proper wiener scaling sqrt(timestep)
+
 
         # Update Situation
         p_C <- 0.1 / (1 + exp(PS$C$k_AV_C * ((AV) - PS$C$h_AV_C)))
@@ -299,7 +285,7 @@ simPanic <- function(time, # integer vector 1:n, indicating the time interval, w
       if(!is.null(tx)) { # if there are interventions
 
         # Save old value on E-parameter
-        if(day_tracker == 1) TxI4_old <- PS$E$TxI4
+        if(day_tracker %in% 1:2) TxI4_old <- PS$E$TxI4
 
         # Intervention 1: Psychoeducation on AS
         if(day_tracker %in% tx$I1) AS <- AS*(1-PS$Tx$I123_alpha)
@@ -337,15 +323,20 @@ simPanic <- function(time, # integer vector 1:n, indicating the time interval, w
           PS$Arousal$h_A_PT <- 0.25^AS - 0.1 * C
         }
 
-        # At end of interventions: set E-parameter back
-        if(day_tracker == max(unlist(tx))) PS$E$TxI4 <- TxI4_old
+        # One week after last intervention: set E-parameter back
+        if(!is.null(tx$I5)) if(day_tracker == max(tx$I5 + 7)) PS$E$TxI4 <- TxI4_old
 
       } # end if: interventions
 
 
       # Draw noise for the next week again, remove epsilon because it's not needed
       Nvec <- c(Nvec[noise_tracker], rep(NA,daysteps))
-      epsilon <- rnorm(daysteps, mean = PS$N$mu_N, sd = sigma)
+
+      # epsilon <- rnorm(daysteps, mean = PS$N$mu_N, sd = sigma)
+
+      sigma_scaled <- sigma/sqrt(stepsize)
+      epsilon <- rnorm(daysteps, mean = PS$N$mu_N, sd = sigma_scaled)
+
       for(i in 2:(daysteps+1)){
         Nvec[i] <- ((1 - 1/PS$N$lambda_N) * (Nvec[i-1]) + beta*epsilon[i-1])
       }
