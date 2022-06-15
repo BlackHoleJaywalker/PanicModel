@@ -288,10 +288,10 @@ simPanic <- function(time, # integer vector 1:n, indicating the time interval, w
         if(day_tracker %in% 1:2) TxI4_old <- PS$E$TxI4
 
         # Intervention 1: Psychoeducation on AS
-        if(day_tracker %in% tx$I1) AS <- AS*(1-PS$Tx$I123_alpha)
+        if(day_tracker %in% tx$I1) AS <- AS*(1-PS$Tx$I123_alpha) # decrease, since lower AS values are good
 
         # Intervention 2: Psychoeducation on ES
-        if(day_tracker %in% tx$I2) ES <- ES*(1-PS$Tx$I123_alpha)
+        if(day_tracker %in% tx$I2) ES <- ES*(1+PS$Tx$I123_alpha) + PS$Tx$I123_alpha # increase, since higher ES values are good
 
         # Intervention 3: Cognitive Restructuring on AS
         if(day_tracker %in% tx$I3) AS <- AS*(1-PS$Tx$I123_alpha)
