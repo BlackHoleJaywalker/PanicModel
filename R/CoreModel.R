@@ -1,4 +1,4 @@
-# jonashaslbeck@gmail.com; May 25, 2022
+# jonashaslbeck@gmail.com; September 25, 2022
 
 simPanic <- function(time, # integer vector 1:n, indicating the time interval, where 1 is one "minute"
                      stepsize, # stepsize; <= 1
@@ -96,15 +96,15 @@ simPanic <- function(time, # integer vector 1:n, indicating the time interval, w
   sigma <- sigma * sqrt(.001)
 
   # Initial Perceived Threat parameters - updated every hour
-  PS$Arousal$k_A_PT <- 20 - 10 * 0.1^AS + 5 * C
-  PS$Arousal$h_A_PT <- 0.25 ^ AS - 0.1 * C # Update parameters determined by arousal schema
+  PS$PT$k_A_PT <- 20 - 10 * 0.1^AS + 5 * C
+  PS$PT$h_A_PT <- 0.25 ^ AS - 0.1 * C # Update parameters determined by arousal schema
 
   # create storage
   outmat <- matrix(NA, nrow = length(time), ncol = 12,
                    dimnames = list(NULL,c("A","N","H","PT","AS","E","ES","AF","AV","C","p_C","h") ))
 
   # Save initial values
-  outmat[1, ] <- c(A, N, H, PT, AS, E, ES, AF, AV, C, p_C, PS$Arousal$h_A_PT)
+  outmat[1, ] <- c(A, N, H, PT, AS, E, ES, AF, AV, C, p_C, PS$PT$h_A_PT)
 
   # Track Time with a time-tracker
   obs_tracker <- 2 # the first observation has already been taken, so next save point is the 2nd
@@ -169,7 +169,7 @@ simPanic <- function(time, # integer vector 1:n, indicating the time interval, w
 
     # Minute-perturbation of Arousal
     if(!is.null(PS$Tx$minuteP)) {
-      if(time_tracker == (PS$Tx$minuteP / stepsize)) Anew <- .5
+      if(time_tracker == (PS$Tx$minuteP / stepsize)) Anew <- PS$Tx$strengthP
     }
 
     # Perceived Threat
@@ -177,9 +177,9 @@ simPanic <- function(time, # integer vector 1:n, indicating the time interval, w
                           A = A,
                           E = E,
                           r_PT = PS$PT$r_PT,
-                          k_A_PT = PS$Arousal$k_A_PT,
+                          k_A_PT = PS$PT$k_A_PT,
                           s_E_PT = PS$PT$s_E_PT,
-                          h_A_PT = PS$Arousal$h_A_PT) * stepsize
+                          h_A_PT = PS$PT$h_A_PT) * stepsize
 
 
     # Homoestatic
@@ -225,8 +225,8 @@ simPanic <- function(time, # integer vector 1:n, indicating the time interval, w
       # Update C, the situation
       C <- sample(0:1, size = 1, prob = c(1 - p_C, p_C))
 
-      PS$Arousal$k_A_PT <- 20 - 10 * 0.1^AS + 5 * C # Updated based on Don's email from Oct 13
-      PS$Arousal$h_A_PT <- 0.25^AS - 0.1 * C #Update parameters determined by arousal schema
+      PS$PT$k_A_PT <- 20 - 10 * 0.1^AS + 5 * C # Updated based on Don's email from Oct 13
+      PS$PT$h_A_PT <- 0.25^AS - 0.1 * C #Update parameters determined by arousal schema
 
     } # end if: situation update
 
@@ -319,8 +319,8 @@ simPanic <- function(time, # integer vector 1:n, indicating the time interval, w
         if(day_tracker %in% tx$I5) {
           # Switch Context on for 1 h (note: holds only for 1h, because after it will be overwritten by the 1h loop above)
           C <- 1
-          PS$Arousal$k_A_PT <- 20 - 10 * 0.1^AS + 5 * C
-          PS$Arousal$h_A_PT <- 0.25^AS - 0.1 * C
+          PS$PT$k_A_PT <- 20 - 10 * 0.1^AS + 5 * C
+          PS$PT$h_A_PT <- 0.25^AS - 0.1 * C
         }
 
         # One week after last intervention: set E-parameter back
@@ -354,7 +354,7 @@ simPanic <- function(time, # integer vector 1:n, indicating the time interval, w
 
     # Should we save the current values of all variables to the output?
     if(time[obs_tracker] == timepoints[time_tracker]){ # is current time equal to a "save-point" time?
-      outmat[obs_tracker,] <- c(A, N, H, PT, AS, E, ES, AF, AV, C, p_C, PS$Arousal$h_A_PT)
+      outmat[obs_tracker,] <- c(A, N, H, PT, AS, E, ES, AF, AV, C, p_C, PS$PT$h_A_PT)
       # update observation tracker
       obs_tracker <- obs_tracker + 1
     }
