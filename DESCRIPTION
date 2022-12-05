@@ -4,7 +4,7 @@ Title: What the Package Does (Title Case)
 Version: 0.1.0
 Author: Don Robinaugh <robinaugh@gmail.com>; Jonas Haslbeck <jonashaslbeck@gmail.com>, Oisin Ryan <ryanoisin@gmail.com>
 Maintainer: Don Robinaugh <robinaugh@gmail.com>
-Description: Implementation of the computational model for Panic disorder in XXX
+Description: Implementation of the computational model for Panic disorder
 License: What license is it under?
 Encoding: UTF-8
 LazyData: true

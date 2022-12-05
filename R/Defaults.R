@@ -19,25 +19,25 @@ pars_default <- list("A" = list("r_A"= 0.5,
                                 "h_PT_E" = 0.5,
                                 "TxI4"=0),
 
-                     "AV" = list("r_AV" = 1,
-                                 "k_AS_AV" = 15,
-                                 "h_AS_AV" = 0.75),
+                     "V" = list("r_V" = 1,
+                                 "k_S_V" = 15,
+                                 "h_S_V" = 0.75),
 
-                     "N" = list("mu_N" = 0,
+                     "N" = list("mu_N" = 0,  # if we put more noise on the system the
                                 "lambda_N" = 60,
-                                "k_AV_N" = 5,
-                                "h_AV_N" = 0.5),
+                                "k_V_N" = 5,
+                                "h_V_N" = 0.5),
 
-                     "C" = list("k_AV_C" = 5,
-                                "h_AV_C" = 0.5),
+                     "C" = list("k_V_C" = 5,
+                                "h_V_C" = 0.5),
 
                      "TS" = list("cr_AF" = 0.50,
-                                 "cr_E_AS" = 0.25,
-                                 "cr_E_ES" = 0.25,
-                                 "r_AS_a" = 0.25,
-                                 "r_AS_e" = 0.10,
-                                 "r_ES_a" = 0.10,
-                                 "r_ES_e" = 0.25),
+                                 "cr_E_S" = 0.25,
+                                 "cr_E_X" = 0.25,
+                                 "r_S_a" = 0.25,
+                                 "r_S_e" = 0.10,
+                                 "r_X_a" = 0.10,
+                                 "r_X_e" = 0.25),
 
                      "Tx" = list("I123_alpha" = 0.1,
                                  "I4Adh" = 0.6,
@@ -50,8 +50,8 @@ pars_default <- list("A" = list("r_A"= 0.5,
 # -----------------------------------------
 
 initial_default <- list("A" = 0,
-                        "AS" = 0.5,
+                        "S" = 0.5,
                         "H" = 0,
                         "PT" = 0,
                         "E" = 0,
-                        "ES" = 0.5)
+                        "X" = 0.5)

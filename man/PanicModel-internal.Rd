@@ -1,13 +1,13 @@
 \name{PanicModel-internal}
 \title{Internal PanicModel functions}
 
-\alias{d_A_dt}
-\alias{d_PT_dt}
-\alias{d_H_dt}
-\alias{d_E_dt}
-\alias{d_AS_dt}
-\alias{d_ES_dt}
-\alias{d_AV_dt}
+\alias{dA_dt}
+\alias{dPT_dt}
+\alias{dH_dt}
+\alias{dE_dt}
+\alias{dS_dt}
+\alias{dX_dt}
+\alias{dV_dt}
 
 \alias{pars_default}
 \alias{initial_default}

@@ -16,14 +16,14 @@ simPanic <- function(time, # integer vector 1:n, indicating the time interval, w
   PS <- pars_default
 
   # Parameters specified?
-  if(!is.null(parameters)) {
+  if (!is.null(parameters)) {
 
     names_list_def <- names(pars_default)
     names_list_spec <- names(parameters)
     n_spec <- length(names_list_spec)
 
-    # loop over specified upper level list entries
-    for(i in 1:n_spec) {
+    # Loop over specified upper level list entries
+    for (i in 1:n_spec) {
       pars_spec_i <- parameters[[names_list_spec[i]]]
       n_pars_spec_i <- length(pars_spec_i)
       names_list_spec_j <- names(pars_spec_i)
@@ -38,19 +38,17 @@ simPanic <- function(time, # integer vector 1:n, indicating the time interval, w
   INI <- initial_default
 
   # Initial values specified?
-  if(!is.null(initial)) {
+  if (!is.null(initial)) {
 
     names_list_ini_def <- names(initial_default)
     names_list_ini_def <- names(initial)
     n_spec_ini <- length(names_list_ini_def)
 
-    for(i in 1:n_spec_ini) {
+    for (i in 1:n_spec_ini) {
       INI[[names_list_ini_def[i]]] <- initial[[names_list_ini_def[i]]]
     }
 
   } # end: if
-
-
 
 
   # Setup Step 1: Import Time Scale and Default Parameters --------
@@ -62,25 +60,25 @@ simPanic <- function(time, # integer vector 1:n, indicating the time interval, w
   # Setup Step 2: Specify Components ---------
 
   # Set initial values
-  A <- INI$A # Arousal
-  N <- 0 # Noise initial draw is zero
-  H <- INI$H # Homeostatic Feedback
-  PT <- INI$PT # Perceived Threat
-  E <- INI$E # Escape
+  A  <- INI$A # arousal
+  N  <- 0 # noise initial draw is zero
+  H  <- INI$H # homeostatic feedback
+  PT <- INI$PT # perceived threat
+  E  <- INI$E # escape
 
-  # Fear
-  if(A > 0) {
+  # fear
+  if (A > 0) {
     AF <- sqrt(A * PT)
   } else {
     AF <- 0
   }
 
-  AS <- INI$AS # Arousal Schema
-  ES <- INI$ES # Panic Self-efficacy
-  AV <- 1 / (1 + exp(1)^(-PS$AV$k_AS_AV * (AS - PS$AV$h_AS_AV)))
+  S <- INI$S # arousal schema
+  X <- INI$X # escape schema
+  V <- 1 / (1 + exp(1)^(-PS$V$k_S_V * (S - PS$V$h_S_V))) # avoidance
 
-  # Context
-  p_C <- 0.1 / (1 + exp(1)^(PS$C$k_AV_C * (AV - PS$C$h_AV_C)))
+  # context
+  p_C <- 0.1 / (1 + exp(1)^(PS$C$k_V_C * (V - PS$C$h_V_C)))
   C <- sample(0:1, size = 1, prob = c(1-p_C, p_C))
 
   # Track Adherence
@@ -91,61 +89,60 @@ simPanic <- function(time, # integer vector 1:n, indicating the time interval, w
   # Additional Parameters
 
   # Arousal
-  sigma <- 0.30 / (1 + exp(1)^(PS$N$k_AV_N * ((AV) - PS$N$h_AV_N))) + 0.50
+  sigma <- 0.30 / (1 + exp(1)^(PS$N$k_V_N * ((V) - PS$N$h_V_N))) + 0.50
   beta <-  sigma * sqrt(2/PS$N$lambda_N - 1/PS$N$lambda_N^2)
-  sigma <- sigma * sqrt(.001)
+  sigma <- sigma * sqrt(0.001)
 
   # Initial Perceived Threat parameters - updated every hour
-  PS$PT$k_A_PT <- 20 - 10 * 0.1^AS + 5 * C
-  PS$PT$h_A_PT <- 0.25 ^ AS - 0.1 * C # Update parameters determined by arousal schema
+  PS$PT$k_A_PT <- 20 - 10 * 0.10^S + 5 * C
+  PS$PT$h_A_PT <- 0.25^S - 0.1 * C # Update parameters determined by arousal schema
 
-  # create storage
+  # Create storage
   outmat <- matrix(NA, nrow = length(time), ncol = 12,
-                   dimnames = list(NULL,c("A","N","H","PT","AS","E","ES","AF","AV","C","p_C","h") ))
+                   dimnames = list(NULL,c("A","N","H","PT","S","E","X","AF","V","C","p_C","h") ))
 
   # Save initial values
-  outmat[1, ] <- c(A, N, H, PT, AS, E, ES, AF, AV, C, p_C, PS$PT$h_A_PT)
+  outmat[1, ] <- c(A, N, H, PT, S, E, X, AF, V, C, p_C, PS$PT$h_A_PT)
 
   # Track Time with a time-tracker
   obs_tracker <- 2 # the first observation has already been taken, so next save point is the 2nd
-  # introduce here a "day_tracker" and a "noise_tracker"
+
+  # Introduce a "day_tracker" and a "noise_tracker"
   day_tracker <- 2 # This starts at 2 because we have already draw the noise for day 1 below
   noise_tracker <- 0
   tol <- stepsize *.01 # sets a tolerance for evaluating time equalities
 
-  # Track "maximum" values of AF, E and PT WITHIN A DAY for end-of-day updating
+  # Track "maximum" values of fear (AF), escape (E) and perceived theat (PT) WITHIN A DAY for end-of-day updating
   maxAF <- AF
-  maxE <- E
+  maxE  <- E
   maxPT <- PT
 
   # Draw Noise for a day at a time
-  daysteps <- daydef/stepsize # how many euler steps in a day
+  daysteps <- daydef / stepsize # how many euler steps in a day
   timepoints <- seq(time[1], max(time), by = stepsize) # what time points do all euler steps occur at?
   daypoints <- seq(time[1], max(time), by = daydef) # what time points do the day-changes occur at?
 
-  # if the time range doesn't encapsulate a day, re-set day_tracker
-  if((daydef > range_time[2])) day_tracker <- 1
+  # If the time range doesn't encapsulate a day, re-set day_tracker
+  if ((daydef > range_time[2])) day_tracker <- 1
 
   # Draw noise for a day at a time
-  Nvec <- c(N,rep(NA,daysteps))
-
-  # epsilon <- rnorm(daysteps, mean = PS$N$mu_N, sd = sigma)
+  Nvec <- c(N, rep(NA, daysteps))
   sigma_scaled <- sigma/sqrt(stepsize)
   epsilon <- rnorm(daysteps, mean = PS$N$mu_N, sd = sigma_scaled)
 
-  for(i in 2:(daysteps+1)){
-    Nvec[i] <- ((1 - 1/PS$N$lambda_N) * (Nvec[i-1]) + beta*epsilon[i-1])
+  for (i in 2:(daysteps+1)){
+    Nvec[i] <- (1 - 1/PS$N$lambda_N) * (Nvec[i-1]) + beta*epsilon[i-1]
   }
-  rm(epsilon) # ???
+  rm(epsilon) 
 
 
   # Simulation Step 1: 'For Loop' that carries out simulation---------
 
   # Setup progress bar
-  if(pbar==TRUE) pb <- txtProgressBar(min = 1, max=length(time), initial=1, char="-", style = 3)
+  if (pbar==TRUE) pb <- txtProgressBar(min = 1, max = length(time), initial = 1, char = "-", style = 3)
 
   # Changed to a for loop
-  for(time_tracker in 2:length(timepoints)){
+  for (time_tracker in 2:length(timepoints)) {
 
     noise_tracker <- noise_tracker + 1
 
@@ -158,124 +155,123 @@ simPanic <- function(time, # integer vector 1:n, indicating the time interval, w
     ## Create new values
 
     # Arousal
-    Anew <- A + d_A_dt(A = A,
-                       PT = PT,
-                       N = Nvec[noise_tracker],
-                       H = H,
-                       r_A = PS$A$r_A,
-                       s_PT_A = PS$A$s_PT_A) * stepsize
+    Anew <- A + dA_dt(A = A,
+                      PT = PT,
+                      N = Nvec[noise_tracker],
+                      H = H,
+                      r_A = PS$A$r_A,
+                      s_PT_A = PS$A$s_PT_A) * stepsize
 
-    # browser()
+    if (Anew < 0) Anew <- 0
 
     # Minute-perturbation of Arousal
-    if(!is.null(PS$Tx$minuteP)) {
-      if(time_tracker == (PS$Tx$minuteP / stepsize)) Anew <- PS$Tx$strengthP
+    if (!is.null(PS$Tx$minuteP)) {
+      if (time_tracker == (PS$Tx$minuteP / stepsize)) Anew <- PS$Tx$strengthP
     }
 
     # Perceived Threat
-    PTnew <- PT + d_PT_dt(PT = PT,
-                          A = A,
-                          E = E,
-                          r_PT = PS$PT$r_PT,
-                          k_A_PT = PS$PT$k_A_PT,
-                          s_E_PT = PS$PT$s_E_PT,
-                          h_A_PT = PS$PT$h_A_PT) * stepsize
+    PTnew <- PT + dPT_dt(PT = PT,
+                        A = A,
+                        E = E,
+                        r_PT = PS$PT$r_PT,
+                        k_A_PT = PS$PT$k_A_PT,
+                        s_E_PT = PS$PT$s_E_PT,
+                        h_A_PT = PS$PT$h_A_PT) * stepsize
 
 
     # Homoestatic
-    Hnew <- H + d_H_dt(H = H,
-                       A = A,
-                       r_H = PS$H$r_H,
-                       k_A_H = PS$H$k_A_H,
-                       h_A_H = PS$H$h_A_H) * stepsize
+    Hnew <- H + dH_dt(H = H,
+                      A = A,
+                      r_H = PS$H$r_H,
+                      k_A_H = PS$H$k_A_H,
+                      h_A_H = PS$H$h_A_H) * stepsize
 
     # Escape
-    Enew <- E + d_E_dt(E = E,
-                       PT = PT,
-                       ES = ES,
-                       r_E = PS$E$r_E,
-                       k_PT_E = PS$E$k_PT_E,
-                       h_PT_E = PS$E$h_PT_E,
-                       TxI4 = PS$E$TxI4) * stepsize
+    Enew <- E + dE_dt(E = E,
+                      PT = PT,
+                      X = X,
+                      r_E = PS$E$r_E,
+                      k_PT_E = PS$E$k_PT_E,
+                      h_PT_E = PS$E$h_PT_E,
+                      TxI4 = PS$E$TxI4) * stepsize
 
     # Overwrite current values
-    A <- Anew
-    H <- Hnew
+    A  <- Anew
+    H  <- Hnew
     PT <- PTnew
-    E <- Enew
+    E  <- Enew
 
     # AF updated based on current
-    if(A > 0) {
+    if (A > 0) {
       AF <- sqrt(A * PT)
     } else {
       AF <- 0
     }
 
     # update maxAF, maxE and maxPT so far today
-    if(AF > maxAF) maxAF <- AF
-    if(E > maxE) maxE <- E
-    if(PT > maxPT) maxPT <- PT
+    if (AF > maxAF) maxAF <- AF
+    if (E > maxE) maxE <- E
+    if (PT > maxPT) maxPT <- PT
 
     # SimStep 1B: Slow Model Interactions -----------
 
     # ------- Hour-level: Update --------
 
-    if(abs(timepoints[time_tracker] %% C_steps) < tol) {
+    if (abs(timepoints[time_tracker] %% C_steps) < tol) {
 
       # Update C, the situation
       C <- sample(0:1, size = 1, prob = c(1 - p_C, p_C))
 
-      PS$PT$k_A_PT <- 20 - 10 * 0.1^AS + 5 * C # Updated based on Don's email from Oct 13
-      PS$PT$h_A_PT <- 0.25^AS - 0.1 * C #Update parameters determined by arousal schema
+      PS$PT$k_A_PT <- 20 - 10 * 0.1^S + 5 * C # updated based on Don's email from Oct 13
+      PS$PT$h_A_PT <- 0.25^S - 0.1 * C # update parameters determined by arousal schema
 
     } # end if: situation update
 
 
     # ------- Day-level: Update --------
 
-    if(timepoints[time_tracker] == daypoints[day_tracker]) {  # Is it the end of a Day?
+    if (timepoints[time_tracker] == daypoints[day_tracker]) {  # Is it the end of a Day?
 
       # Arousal Schema: As a function of Arousal, Perceived Threat, and Escape
-      if(maxAF >= PS$TS$cr_AF){
+      if (maxAF >= PS$TS$cr_AF){
 
         # Update Arousal Schema
-        AS_new <- AS + d_AS_dt(AS = AS,
-                               maxE = maxE,
-                               maxPT = maxPT,
-                               cr_E_AS = PS$TS$cr_E_AS,
-                               r_AS_a = PS$TS$r_AS_a,
-                               r_AS_e = PS$TS$r_AS_e)
+        S_new <- S + dS_dt(S = S,
+                           maxE = maxE,
+                           maxPT = maxPT,
+                           cr_E_S = PS$TS$cr_E_S,
+                           r_S_a = PS$TS$r_S_a,
+                           r_S_e = PS$TS$r_S_e)
 
         # Update Escape Schema
-        ES_new <- ES + d_ES_dt(ES = ES,
-                               maxE = maxE,
-                               maxPT = maxPT,
-                               cr_E_ES = PS$TS$cr_E_ES,
-                               r_ES_a = PS$TS$r_ES_a,
-                               r_ES_e = PS$TS$r_ES_e)
+        X_new <- X + dX_dt(X = X,
+                           maxE = maxE,
+                           maxPT = maxPT,
+                           cr_E_X = PS$TS$cr_E_X,
+                           r_X_a = PS$TS$r_X_a,
+                           r_X_e = PS$TS$r_X_e)
 
         # Overwrite current values
-        AS <- AS_new
-        ES <- ES_new
+        S <- S_new
+        X <- X_new
 
         # Update Avoidance
-        AV_new <- AV + d_AV_dt(AV = AV,
-                               AS = AS,
-                               r_AV = PS$AV$r_AV,
-                               k_AS_AV = PS$AV$k_AS_AV,
-                               h_AS_AV = PS$AV$h_AS_AV)
+        V_new <- V + dV_dt(V = V,
+                           S = S,
+                           r_V = PS$V$r_V,
+                           k_S_V = PS$V$k_S_V,
+                           h_S_V = PS$V$h_S_V)
 
         # Overwrite current values
-        AV <- AV_new
+        V <- V_new
 
         # Update Noise draw parameters
-        sigma <- 0.30 / (1 + exp(PS$N$k_AV_N * ((AV) - PS$N$h_AV_N))) + 0.50
+        sigma <- 0.30 / (1 + exp(PS$N$k_V_N * ((V) - PS$N$h_V_N))) + 0.50
         beta <-  sigma * sqrt(2 / PS$N$lambda_N - 1 / PS$N$lambda_N ^ 2)
         sigma <- sigma * sqrt(.001) # May 2nd, 22: This is done so that the model is still calibrated after adding the proper wiener scaling sqrt(timestep)
 
-
         # Update Situation
-        p_C <- 0.1 / (1 + exp(PS$C$k_AV_C * ((AV) - PS$C$h_AV_C)))
+        p_C <- 0.1 / (1 + exp(PS$C$k_V_C * ((V) - PS$C$h_V_C)))
 
       } # end of if AF loop
 
@@ -287,14 +283,14 @@ simPanic <- function(time, # integer vector 1:n, indicating the time interval, w
         # Save old value on E-parameter
         if(day_tracker %in% 1:2) TxI4_old <- PS$E$TxI4
 
-        # Intervention 1: Psychoeducation on AS
-        if(day_tracker %in% tx$I1) AS <- AS*(1-PS$Tx$I123_alpha) # decrease, since lower AS values are good
+        # Intervention 1: Psychoeducation on S
+        if(day_tracker %in% tx$I1) S <- S*(1-PS$Tx$I123_alpha) # decrease, since lower S values are good
 
-        # Intervention 2: Psychoeducation on ES
-        if(day_tracker %in% tx$I2) ES <- ES + PS$Tx$I123_alpha*(1-ES) # increase, since higher ES values are good
+        # Intervention 2: Psychoeducation on X
+        if(day_tracker %in% tx$I2) X <- X + PS$Tx$I123_alpha*(1-X) # increase, since higher X values are good
 
-        # Intervention 3: Cognitive Restructuring on AS
-        if(day_tracker %in% tx$I3) AS <- AS*(1-PS$Tx$I123_alpha)
+        # Intervention 3: Cognitive Restructuring on S
+        if(day_tracker %in% tx$I3) S <- S*(1-PS$Tx$I123_alpha)
 
         # Intervention 4: Interoceptive Exposure
         if(day_tracker %in% tx$I4) {
@@ -319,8 +315,8 @@ simPanic <- function(time, # integer vector 1:n, indicating the time interval, w
         if(day_tracker %in% tx$I5) {
           # Switch Context on for 1 h (note: holds only for 1h, because after it will be overwritten by the 1h loop above)
           C <- 1
-          PS$PT$k_A_PT <- 20 - 10 * 0.1^AS + 5 * C
-          PS$PT$h_A_PT <- 0.25^AS - 0.1 * C
+          PS$PT$k_A_PT <- 20 - 10 * 0.1^S + 5 * C
+          PS$PT$h_A_PT <- 0.25^S - 0.1 * C
         }
 
         # One week after last intervention: set E-parameter back
@@ -331,8 +327,6 @@ simPanic <- function(time, # integer vector 1:n, indicating the time interval, w
 
       # Draw noise for the next week again, remove epsilon because it's not needed
       Nvec <- c(Nvec[noise_tracker], rep(NA,daysteps))
-
-      # epsilon <- rnorm(daysteps, mean = PS$N$mu_N, sd = sigma)
 
       sigma_scaled <- sigma/sqrt(stepsize)
       epsilon <- rnorm(daysteps, mean = PS$N$mu_N, sd = sigma_scaled)
@@ -354,7 +348,7 @@ simPanic <- function(time, # integer vector 1:n, indicating the time interval, w
 
     # Should we save the current values of all variables to the output?
     if(time[obs_tracker] == timepoints[time_tracker]){ # is current time equal to a "save-point" time?
-      outmat[obs_tracker,] <- c(A, N, H, PT, AS, E, ES, AF, AV, C, p_C, PS$PT$h_A_PT)
+      outmat[obs_tracker,] <- c(A, N, H, PT, S, E, X, AF, V, C, p_C, PS$PT$h_A_PT)
       # update observation tracker
       obs_tracker <- obs_tracker + 1
     }
@@ -375,6 +369,3 @@ simPanic <- function(time, # integer vector 1:n, indicating the time interval, w
   return(outlist)
 
 } # End of Function
-
-
-

@@ -97,20 +97,20 @@ function (time, stepsize, parameters, initial, tx, pbar = TRUE)
     PT <- INI$PT
     E <- INI$E
     AF <- sqrt(A * PT)
-    AS <- INI$AS
-    ES <- INI$ES
-    AV <- 1/(1 + exp(1)^(-PS$AV$k_AS_AV * (AS - PS$AV$h_AS_AV)))
-    p_C <- 0.1/(1 + exp(1)^(PS$C$k_AV_C * (AV - PS$C$h_AV_C)))
+    S <- INI$S
+    X <- INI$X
+    V <- 1/(1 + exp(1)^(-PS$V$k_S_V * (S - PS$V$h_S_V)))
+    p_C <- 0.1/(1 + exp(1)^(PS$C$k_V_C * (V - PS$C$h_V_C)))
     C <- sample(0:1, size = 1, prob = c(1 - p_C, p_C))
-    sigma <- 0.3/(1 + exp(1)^(PS$N$k_AV_N * ((AV) - PS$N$h_AV_N))) +
+    sigma <- 0.3/(1 + exp(1)^(PS$N$k_V_N * ((V) - PS$N$h_V_N))) +
         0.5
     beta <- sigma * sqrt(2/PS$N$lambda_N - 1/PS$N$lambda_N^2)
-    k_A_PT <- 20 - 10 * 0.25^AS + 5 * C
-    h_A_PT <- 0.25^AS - 0.1 * C
+    k_A_PT <- 20 - 10 * 0.25^S + 5 * C
+    h_A_PT <- 0.25^S - 0.1 * C
     outmat <- matrix(NA, nrow = length(time), ncol = 12, dimnames = list(NULL,
-        c("A", "N", "H", "PT", "AS", "E", "ES", "AF", "AV", "C",
+        c("A", "N", "H", "PT", "S", "E", "X", "AF", "V", "C",
             "p_C", "h")))
-    outmat[1, ] <- c(A, N, H, PT, AS, E, ES, AF, AV, C, p_C,
+    outmat[1, ] <- c(A, N, H, PT, S, E, X, AF, V, C, p_C,
         h_A_PT)
     obs_tracker <- 2
     day_tracker <- 2
@@ -136,13 +136,13 @@ function (time, stepsize, parameters, initial, tx, pbar = TRUE)
             char = "-", style = 3)
     for (time_tracker in 2:length(timepoints)) {
         noise_tracker <- noise_tracker + 1
-        Anew <- A + d_A_dt(A = A, PT = PT, N = Nvec[noise_tracker],
+        Anew <- A + dA_dt(A = A, PT = PT, N = Nvec[noise_tracker],
             H = H, r_A = PS$A$r_A, s_PT_A = PS$A$s_PT_A) * stepsize
-        PTnew <- PT + d_PT_dt(PT = PT, A = A, E = E, r_PT = PS$PT$r_PT,
+        PTnew <- PT + dPT_dt(PT = PT, A = A, E = E, r_PT = PS$PT$r_PT,
             s_E_PT = PS$PT$s_E_PT, h_A_PT = h_A_PT) * stepsize
-        Hnew <- H + d_H_dt(PT = PT, A = A, E = E, r_H = PS$H$r_H,
+        Hnew <- H + dH_dt(PT = PT, A = A, E = E, r_H = PS$H$r_H,
             k_A_H = PS$H$k_A_H, h_A_H = PS$H$h_A_H) * stepsize
-        Enew <- E + d_E_dt(E = E, PT = PT, ES = ES, r_E = PS$E$r_E,
+        Enew <- E + dE_dt(E = E, PT = PT, X = X, r_E = PS$E$r_E,
             k_PT_E = PS$E$k_PT_E, h_PT_E = PS$E$h_PT_E) * stepsize
         A <- Anew
         H <- Hnew
@@ -157,27 +157,27 @@ function (time, stepsize, parameters, initial, tx, pbar = TRUE)
             maxPT <- PT
         if (abs(timepoints[time_tracker]\%\%C_steps) < tol) {
             C <- sample(0:1, size = 1, prob = c(1 - p_C, p_C))
-            PS$Arousal$k_A_PT <- 20 - 10 * 0.25^AS + 5 * C
-            PS$Arousal$h_A_PT <- 0.25^AS - 0.1 * C
+            PS$Arousal$k_A_PT <- 20 - 10 * 0.25^S + 5 * C
+            PS$Arousal$h_A_PT <- 0.25^S - 0.1 * C
         }
         if (timepoints[time_tracker] == daypoints[day_tracker]) {
             if (maxAF >= PS$TS$cr_AF) {
-                AS_new <- AS + d_AS_dt(AS = AS, maxE = maxE,
-                  maxPT = maxPT, cr_E_AS = PS$TS$cr_E_AS, r_AS_a = PS$TS$r_AS_a,
-                  r_AS_e = PS$TS$r_AS_e)
-                ES_new <- ES + d_ES_dt(AS = AS, maxE = maxE,
-                  maxPT = maxPT, cr_E_AS = PS$TS$cr_E_AS, r_ES_a = PS$TS$r_ES_a,
-                  r_ES_e = PS$TS$r_ES_r)
-                AS <- AS_new
-                ES <- ES_new
-                AV_new <- AV + d_AV_dt(AV = AV, AS = AS, r_AV = PS$AV$r_AV,
-                  k_AS_AV = PS$AV$k_AS_AV, h_AS_AV = PS$AV$h_AS_AV)
-                AV <- AV_new
-                sigma <- 0.3/(1 + exp(1)^(PS$N$k_AV_N * ((AV) -
-                  PS$N$h_AV_N))) + 0.5
+                S_new <- S + dS_dt(S = S, maxE = maxE,
+                  maxPT = maxPT, cr_E_S = PS$TS$cr_E_S, r_S_a = PS$TS$r_S_a,
+                  r_S_e = PS$TS$r_S_e)
+                X_new <- X + dX_dt(S = S, maxE = maxE,
+                  maxPT = maxPT, cr_E_S = PS$TS$cr_E_S, r_X_a = PS$TS$r_X_a,
+                  r_X_e = PS$TS$r_X_r)
+                S <- S_new
+                X <- X_new
+                V_new <- V + dV_dt(V = V, S = S, r_V = PS$V$r_V,
+                  k_S_V = PS$V$k_S_V, h_S_V = PS$V$h_S_V)
+                V <- V_new
+                sigma <- 0.3/(1 + exp(1)^(PS$N$k_V_N * ((V) -
+                  PS$N$h_V_N))) + 0.5
                 beta <- sigma * sqrt(2/PS$N$lambda_N - 1/PS$N$lambda_N^2)
-                p_C <- 0.1/(1 + exp(1)^(PS$C$k_AV_C * ((AV) -
-                  PS$C$h_AV_C)))
+                p_C <- 0.1/(1 + exp(1)^(PS$C$k_V_C * ((V) -
+                  PS$C$h_V_C)))
             }
             Nvec <- c(Nvec[noise_tracker], rep(NA, daysteps))
             epsilon <- rnorm(daysteps, mean = PS$N$mu_N, sd = sigma)
@@ -193,8 +193,8 @@ function (time, stepsize, parameters, initial, tx, pbar = TRUE)
             noise_tracker <- 0
         }
         if (time[obs_tracker] == timepoints[time_tracker]) {
-            outmat[obs_tracker, ] <- c(A, N, H, PT, AS, E, ES,
-                AF, AV, C, p_C, h_A_PT)
+            outmat[obs_tracker, ] <- c(A, N, H, PT, S, E, X,
+                AF, V, C, p_C, h_A_PT)
             obs_tracker <- obs_tracker + 1
         }
         if (pbar == TRUE)

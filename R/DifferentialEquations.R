@@ -1,22 +1,19 @@
 # September 25, 2022
 
-# This file contains the differential equations for all
+# This file contains the differential equations for the formalization of the network theory of panic disorder
 
 # -----------------------------------------
 # -------- Arousal ------------------------
 # -----------------------------------------
 
-d_A_dt <- function(A,
-                   PT,
-                   N,
-                   H,
-                   r_A,
-                   s_PT_A) {
+dA_dt <- function(A,
+                  PT,
+                  N,
+                  H,
+                  r_A,
+                  s_PT_A) {
 
-  s_dAdt <- r_A * ((s_PT_A*PT + N - H) - A)
-
-  return(s_dAdt)
-
+  r_A * ((s_PT_A * PT + N - H) - A)
 }
 
 
@@ -24,17 +21,15 @@ d_A_dt <- function(A,
 # -------- Perceived Threat ---------------
 # -----------------------------------------
 
-d_PT_dt <- function(PT,
-                    A,
-                    E,
-                    r_PT,
-                    k_A_PT,
-                    s_E_PT,
-                    h_A_PT) {
+dPT_dt <- function(PT,
+                  A,
+                  E,
+                  r_PT,
+                  k_A_PT,
+                  s_E_PT,
+                  h_A_PT) {
 
-  s_dPTdt <- r_PT * ((1/(1 + exp(- k_A_PT*(A - (s_E_PT*E) - h_A_PT)))) - PT)
-
-  return(s_dPTdt)
+  r_PT * ((1/(1 + exp(- k_A_PT * (A - s_E_PT * E - h_A_PT)))) - PT)
 
 }
 
@@ -43,15 +38,13 @@ d_PT_dt <- function(PT,
 # -------- Homoestatic --------------------
 # -----------------------------------------
 
-d_H_dt <- function(H,
-                   A,
-                   r_H,
-                   k_A_H,
-                   h_A_H) {
+dH_dt <- function(H,
+                  A,
+                  r_H,
+                  k_A_H,
+                  h_A_H) {
 
-  s_dHdt <- r_H * (1/(1 + exp(- k_A_H*(A - h_A_H))) - (0.5*H))
-
-  return(s_dHdt)
+  r_H * (1/(1 + exp(- k_A_H*(A - h_A_H))) - (0.5*H))
 
 }
 
@@ -60,17 +53,15 @@ d_H_dt <- function(H,
 # -------- Escape -------------------------
 # -----------------------------------------
 
-d_E_dt <- function(E,
-                   PT,
-                   ES,
-                   r_E,
-                   k_PT_E,
-                   h_PT_E,
-                   TxI4) {
+dE_dt <- function(E,
+                  PT,
+                  X,
+                  r_E,
+                  k_PT_E,
+                  h_PT_E,
+                  TxI4) {
 
-  s_dEdt <- r_E * ((1/(1 + exp(- k_PT_E * ((PT - ES - TxI4) - h_PT_E)))) - E)
-
-  return(s_dEdt)
+  r_E * ((1/(1 + exp(- k_PT_E * ((PT - X - TxI4) - h_PT_E)))) - E)
 
 }
 
@@ -79,22 +70,20 @@ d_E_dt <- function(E,
 # -------- Arousal Schema -----------------
 # -----------------------------------------
 
-d_AS_dt <- function(AS,
-                    maxE,
-                    maxPT,
-                    cr_E_AS,
-                    r_AS_a,
-                    r_AS_e) {
+dS_dt <- function(S,
+                  maxE,
+                  maxPT,
+                  cr_E_S,
+                  r_S_a,
+                  r_S_e) {
 
-  # If escape has passed some threshold, change AS based on levels of PT and current AS
-  # else, decrease (change) AS in another way
+  # If escape has passed some threshold, change S based on levels of PT and current S
+  # else, decrease (change) S in another way
 
-  ifelse(maxE > cr_E_AS,
-         s_dASdt <- + r_AS_a * (max(maxPT, AS) - AS),
-         s_dASdt <- - r_AS_e * AS
+  ifelse(maxE >= cr_E_S,
+         r_S_a * (max(maxPT, S) - S),
+         - r_S_e * S
   )
-
-  return(s_dASdt)
 
 }
 
@@ -103,22 +92,20 @@ d_AS_dt <- function(AS,
 # -------- Escape Schema ------------------
 # -----------------------------------------
 
-d_ES_dt <- function(ES,
-                    maxE,
-                    maxPT,
-                    cr_E_ES,
-                    r_ES_a,
-                    r_ES_e) {
+dX_dt <- function(X,
+                  maxE,
+                  maxPT,
+                  cr_E_X,
+                  r_X_a,
+                  r_X_e) {
 
-  # If escape has passed some threshold, change escape based on levels of PT and current AS
-  # else, decrease (change) ES in another way
+  # If escape has passed some threshold, change escape based on levels of PT and current S
+  # else, decrease (change) X in another way
 
-  ifelse(maxE > cr_E_ES,
-         s_dESdt <- - r_ES_e * ES,
-         s_dESdt <- + r_ES_a * (max(maxPT, ES) - ES)
+  ifelse(maxE > cr_E_X,
+         - r_X_e * X,
+         r_X_a * (max(maxPT, X) - X)
   )
-
-  return(s_dESdt)
 
 }
 
@@ -127,24 +114,12 @@ d_ES_dt <- function(ES,
 # -------- Avoidance ----------------------
 # -----------------------------------------
 
-d_AV_dt <- function(AV,
-                    AS,
-                    r_AV,
-                    k_AS_AV,
-                    h_AS_AV) {
+dV_dt <- function(V,
+                  S,
+                  r_V,
+                  k_S_V,
+                  h_S_V) {
 
-  s_dAVdt <- r_AV * ((1 / (1 + exp(- k_AS_AV * ( (AS) - h_AS_AV) ))) - AV)
-
-  return(s_dAVdt)
+  r_V * ((1 / (1 + exp(- k_S_V * (S - h_S_V) ))) - V)
 
 }
-
-
-
-
-
-
-
-
-
-
