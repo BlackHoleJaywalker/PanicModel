@@ -38,19 +38,22 @@ dim(out$outmat)
 
 For the 'outmat' output file we have a matrix of 61 time steps (0 through 60) for 12 variables, including:
 
-* 5 Fast-changing Model Components: 
+* 6 "Fast-changing" Model Components: 
   + A = Arousal; 
-  + PT = Perceived Threat; 
-  + E = Escape; 
   + N = Noise; 
   + H = Homeostatic Feedback
-* 3 Slow-changing Model Components: 
+  + PT = Perceived Threat; 
+  + E = Escape;
+  + C = Context;
+* 3 "Slow-changing" Model Components: 
   + S = Arousal Schema; 
   + X = Escape Schema; 
   + V = Avoidance
 * 1 Emergent Component: 
   + AF = Fear
 * 2 model parameters
+  + p_C = probability of entering a panic-predisposing context (C)
+  + h = a parameter that helps define the effect of arousal on perceived threat
 
 ### Visualize Simulation Results for Key Model Components
 We can visualize the simulation results for some of the key model components. 
@@ -71,16 +74,16 @@ legend("topleft", legend=c("Arousal","Perceived Threat","Escape","Homeostatic Fe
 ```
 
 ## Illustration 2: Initial Values & Parameters
-The initial values of model components and parameters defining the relationships among model components can be changed in order to evaluate how the model behaves under different conditions. If left unspecified, the simPanic will use default initial values and parameters. 
+The initial values of model components and the parameters defining the relationships among model components can be changed in order to evaluate how the model behaves under different conditions. If left unspecified, simPanic will use default initial values and parameters. 
 
-To specify initial values or parameters of interest, first create a list assigning the chosen value for the relevant component/parameter. Here, we specify an initial value of 1 for AS and we specify a value of .55 for the parameter r_A, which in the equation defines the rate of change for arousal A:
+To specify initial values or parameters of interest, first create a list assigning the chosen value for the relevant component or parameter. Here, we specify an initial value of 1 for arousal schema (S) and we specify a value of .55 for the parameter r_A, a rate parameter constraining the rate of change for arousal A:
 
 ```{r}
 initial_specified <- list("S"= 1)
 parameters_specified <- list("A" = list("r_A"= .55))
 ```
 
-Then use that list to define initial values (initial = ) and parameters (parameters = ) in the simPanic function: 
+Then use that list to define initial values (initial = ) and parameters (parameters = ) in the simPanic function and run simPanic: 
 
 ```{r, results='hide'}
 out2 <- simPanic(time = 0:120,
@@ -89,7 +92,7 @@ out2 <- simPanic(time = 0:120,
                 parameters = parameters_specified) 
 ```
 
-To be sure, we check the input initial values and parameters:
+To confirm we successfully defined the values of interest for this simulation, we check the input initial values and parameters:
 
 ```{r}
 out2$input$initial$S
@@ -99,7 +102,7 @@ out2$input$parameters$A$r_A
 We can see that, as specified, the initial S = 1 and the parameter r_A = .55. 
 
 ### Visualize Simulation Results for Key Model Components
-We can visualize the simulation results for some of the key model components. 
+We can now visualize the simulation results with these new intial values and parameter settings. 
 
 ```{r}
 results2 <- out2$outmat
@@ -119,7 +122,7 @@ legend("bottomleft", legend = c("Arousal","Perceived Threat","Escape","Homeostat
 ## Illustration 3: Building in a Perturbation
 A perturbation to Arousal can be added to the model to evaluate how the system responds to a perturbation of given strength at a given time. 
 
-To do so, we specify that the perturbation should occur at minute 10 and the perturbation should move arousal to A=0.60. 
+For example, we can specify that the perturbation should occur at minute 10 and that the perturbation should move arousal to A=0.60. 
 
 ```{r}
 perturb_time <- 10
@@ -129,7 +132,7 @@ parameters_specified <- list("Tx" = list("minuteP" = perturb_time, "strengthP" =
 initial_specified <- list("S" = .60)
 ```
 
-Then we use that list to define initial values (initial = ) and parameters (parameters = ) in the simPanic function: 
+Then we use this list to define initial values (initial = ) and parameters (parameters = ) in the simPanic function: 
 
 ```{r, results='hide'}
 out3  <- simPanic(time = 0:60, # 1h
@@ -140,6 +143,8 @@ out3  <- simPanic(time = 0:60, # 1h
 ```
 
 ### Visualize Simulation Results for Key Model Components
+We can now visualize the system's response to this perturbation:
+
 ```{r}
 results3 <- out3$outmat
 plot.new()
@@ -157,7 +162,7 @@ legend("topright", legend = c("Arousal", "Perceived Threat", "Escape", "Homeosta
        lty = c(1,1,1,2), bty = "n")
 ```
 
-Note that the results of these perturbations are affected by stochastic variation in arousal. As a result, the response to the perturbation can be different each time the simulation is run. To illustrate, we can repeat the simulation 10 times and plot the trajectory of arousal for each.
+Note that the response to these perturbations are affected by stochastic variation in arousal. As a result, the response to the perturbation can be different each time the simulation is run. To illustrate, we can repeat the simulation 10 times and plot the trajectory of fear repsonse for each.
 
 ```{r}
 N_sim <- 10
@@ -241,6 +246,7 @@ for (i in 1:N_sim){
 ```
 
 ### Visualize Simulation Results for Key Model Components
+We can then visualize these maximum fear levels in the two conditions of interest: 
 ```{r}
 plot.new()
 plot.window(xlim=c(0,1),ylim=c(0,1))
@@ -255,7 +261,8 @@ legend("topleft", 1, legend = c(paste("S =", Ss[1]), paste("S =", Ss[2])),
 ```
 
 ## Illustration 5: Building in Treatment
-Five Cognitive Behavioral Therapy (CBT) Intervention Components are built in to the model:
+
+Finally, we can simulate the impact of treatment. A cognitive behavioral therapy [CBT] intervention is built into simPanic. This treatment includes five intervention components:
 
 1. I1 = Psychoeducation targeting Arousal Schema (S)
 2. I2 = Psychoeducation targeting Escape Schema (X)
@@ -270,7 +277,7 @@ baseline_weeks <- 0
 baseline_days <- 1
 ```
 
-Furthermore we specify that psychoeducation targeting S (I1) should occurs at Day 2; psychoeducation targeting X (I2) should occurs at Day 2; cognitive restructing targeting S (I3) should occurs at Day 9 and 16; interoceptive exposure (I4) should occur at Days 9-36; and in vivo exposure (I5) should occur at Days 23-36. 
+Furthermore we specify that psychoeducation targeting S (I1) should occurs at Day 2; psychoeducation targeting X (I2) should occurs at Day 2; cognitive restructing targeting S (I3) should occurs at Day 9 and 16; interoceptive exposure (I4) should occur at Days 9-36; and should occur in conjunction with in vivo exposure (I5) at Days 23-36. 
 
 ```{r}
 tx <- list("I1" = baseline_days+baseline_weeks*7+c(1),
@@ -284,7 +291,9 @@ To incorporate variability in treatment efficacy and adherence, you can specify 
 
 * I123_alpha determines the efficacy (in % reduction) for I1-3
 * I4Adh determines the adherence (in % likelihood of completing) for I4-I5
-* I4RdEs determines the Extent to which instruction to refrain from escape behavior raises threshold at which perceived threat will lead to escape (0-1)
+* I4RdEs determines the extent to which instruction to refrain from escape behavior raises threshold at which perceived threat will lead to escape (0-1)
+
+Here, we draw random values for these parameters from beta distributions. 
 
 ```{r}
 parameters_specified <- list("Tx" = list("I123_alpha" = rbeta(n = 1, 1, 9), 
@@ -292,7 +301,8 @@ parameters_specified <- list("Tx" = list("I123_alpha" = rbeta(n = 1, 1, 9),
                                          "I4RdEs" = rbeta(n = 1, 2, 2/3))) 
 ```
 
-Ensure there is enough time for all treatment components to be delivered: 
+When specifying the time for the simulation to run, ensure there is enough time for all treatment components to be delivered: 
+
 ```{r}
 time <- 0:(60*24*7*5)
 ```
@@ -312,6 +322,8 @@ out4 <- simPanic(time = time,
                   pbar = TRUE)
 ```
 
+We can now take a look at the results of this simulated treatment. 
+
 Adherence gives a vector of all assigned exposure exercises, where 1=Completed. 0=Not Completed. The mean of this vector gives the proportion of completed exposures. 
 
 ```{r}
@@ -320,6 +332,7 @@ mean(out4$adherence)
 ```
 
 ### Visualize Simulation Results for Key Model Components
+The code below produces a visualization depicting when treatment components were delivered and how the treatment affected arousal schema and escape schema values. 
 
 ```{r}
 results4 <- out4$outmat
@@ -336,13 +349,14 @@ cols <- vector()
 cols[1] <- rgb(1.0, 0, 0, alpha = .05)
 cols[2] <- rgb(0, 0, 1.0, alpha = .05)
 
-plot.new()
+{plot.new()
+par(mar = c(5, 4, 4, 10),xpd = TRUE)
 plot.window(xlim = c(0, length(results4$A)),  ylim = c(0, 1))
-axis(1, at = seq(endbase, length(results4$A), by = (60*24*7)), labels = c("S1", "S2", "S3", "S4", "S5", "E"))
+axis(1, at = seq(endbase, length(results4$A), by = (60*24*7)), labels = c("S1", "S2", "S3", "S4","S5", "E"))
 axis(2, at = seq(0, 1, .25), las = 2)
 mtext("Weeks", side = 1, line = 4, cex = 1.25)
-polygon(c(seq(1, length(results4$AS)), rev(seq(1,length(results4$S)))), c(results4$S, rep(0,length(results4$S))), col = cols[1], border = NA)
-polygon(c(seq(1, length(results4$ES)), rev(seq(1,length(results4$X)))), c(results4$X, rep(0,length(results4$X))), col = cols[2], border = NA)
+polygon(c(seq(1, length(results4$S)), rev(seq(1,length(results4$S)))), c(results4$S, rep(0,length(results4$S))), col = cols[1], border = NA)
+polygon(c(seq(1, length(results4$X)), rev(seq(1,length(results4$X)))), c(results4$X, rep(0,length(results4$X))), col = cols[2], border = NA)
 lines(results4$PT, col = "dark grey")
 lines(results4$S, col = "red", lwd = 3)
 lines(results4$X, col = "blue", lwd = 3)
@@ -350,8 +364,10 @@ points(exposures_x, exposures_y, pch = 19, col = "black")
 points(cog_x, cog_y, pch = 15, col = "black")
 points(psyed_x, psyed_y, pch = 17, col = "black")
 legend("topright", 1, legend = c("Arousal Schema","Escape Schema"),
+       inset = c(- 0.4, 0),
        col = c("red", "blue"),
        lty = 1, bty = "n")
-legend("topleft", 1, legend = c("Psychoeducation", "Cognitive Restructuring", "Exposure Exercise"),
-       pch = c(17, 15, 19), bty = "n")
+legend("right", 1, legend = c("Psychoeducation", "Cognitive Restructuring", "Exposure Exercise"),
+       inset = c(- 0.45, 0),
+       pch = c(17, 15, 19), bty = "n")}
 ```

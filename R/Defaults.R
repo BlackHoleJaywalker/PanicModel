@@ -1,4 +1,4 @@
-# September 25, 2022
+# December, 2022
 
 # -----------------------------------------
 # -------- Default: Parameters ------------
@@ -23,7 +23,7 @@ pars_default <- list("A" = list("r_A"= 0.5,
                                  "k_S_V" = 15,
                                  "h_S_V" = 0.75),
 
-                     "N" = list("mu_N" = 0,  # if we put more noise on the system the
+                     "N" = list("mu_N" = 0,
                                 "lambda_N" = 60,
                                 "k_V_N" = 5,
                                 "h_V_N" = 0.5),

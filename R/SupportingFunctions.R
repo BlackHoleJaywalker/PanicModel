@@ -1,4 +1,4 @@
-# Support Functions
+# December, 2022
 
 # detectRecover: function to detect time to recover from perturbation -----
 detectRecover <- function(O,t) # detect time to recover mean of outcome (O) following perturbation at time (t)
@@ -51,12 +51,12 @@ detectPanic <- function(AF) # definition of panic attack on Arousal
       ind_label[p] <- counter
     }
   }
-  
+
   # Calculate Stats
   if (all(!ind_present)) counter <- 0
   panic_stats <- matrix(NA, nrow = counter, ncol = 3)
   colnames(panic_stats) <- c("id", "length","severity")
-  
+
   if (!all(!ind_present)) { # are there ANY panic attacks in the interval
     panic_stats[, 1] <- 1:counter
     for (p in 1:counter) {
@@ -65,7 +65,7 @@ detectPanic <- function(AF) # definition of panic attack on Arousal
       panic_stats[p, 3] <- max(AF) #Amount above panic threshold
     }
   }
-  
+
   # Delete final row (artifact of method of detecting panic)
   panic_stats <- panic_stats[panic_stats[,2] > 0, ,drop=FALSE]
   panic_count <- nrow(panic_stats)

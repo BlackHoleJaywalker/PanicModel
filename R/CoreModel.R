@@ -1,4 +1,4 @@
-# jonashaslbeck@gmail.com; September 25, 2022
+### d.robinaugh@northeasetern.edu; jonashaslbeck@gmail.com; o.ryan@uu.nl; December 2022
 
 simPanic <- function(time, # integer vector 1:n, indicating the time interval, where 1 is one "minute"
                      stepsize, # stepsize; <= 1
@@ -133,7 +133,7 @@ simPanic <- function(time, # integer vector 1:n, indicating the time interval, w
   for (i in 2:(daysteps+1)){
     Nvec[i] <- (1 - 1/PS$N$lambda_N) * (Nvec[i-1]) + beta*epsilon[i-1]
   }
-  rm(epsilon) 
+  rm(epsilon)
 
 
   # Simulation Step 1: 'For Loop' that carries out simulation---------
@@ -161,8 +161,6 @@ simPanic <- function(time, # integer vector 1:n, indicating the time interval, w
                       H = H,
                       r_A = PS$A$r_A,
                       s_PT_A = PS$A$s_PT_A) * stepsize
-
-    if (Anew < 0) Anew <- 0
 
     # Minute-perturbation of Arousal
     if (!is.null(PS$Tx$minuteP)) {

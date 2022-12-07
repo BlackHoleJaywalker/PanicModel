@@ -367,7 +367,7 @@ pre code {
 
 <div id="readme" class="section level3">
 <h3>README</h3>
-<p>This project cotains the computational model developed and evaluated
+<p>This project contains the computational model developed and evaluated
 in “Advancing the Network Theory of Mental Disorders: A Computational
 Model of Panic Disorder” (preprint: <a href="https://psyarxiv.com/km37w/" class="uri">https://psyarxiv.com/km37w/</a>). It can be used to simulate
 data from the model in order to evaluate its behavior under a range of
@@ -376,10 +376,9 @@ conditions and derive model predictions.</p>
 <div id="folders" class="section level3">
 <h3>Folders</h3>
 <ul>
-<li><p><code>/R</code> contains the computational model, default initial
+<li><code>/R</code> contains the computational model, default initial
 values and parameter values, the equations that make up the model, and
-supporting functions that help evaluate model output.</p></li>
-<li><p><code>/man</code> contains…</p></li>
+supporting functions that help evaluate model output.</li>
 </ul>
 </div>
 <div id="scripts" class="section level3">
@@ -388,7 +387,7 @@ supporting functions that help evaluate model output.</p></li>
 <li><code>Showcase.R</code> illustrates how to simulate data from the
 model, including how to modify initial values and parameter values, how
 to incorporate perturbations into the model simulations, how to iterate
-the simulation across a set of intiial values or parameter values, and
+the simulation across a set of initial values or parameter values, and
 how to incorporate cognitive behavioral treatment components into the
 simulation.</li>
 </ul>
@@ -400,14 +399,14 @@ simulation.</li>
 disorder, including the function (simPanic) that can be used to simulate
 model predictions.</li>
 <li><code>Defaults.R</code> contains the default initial values and
-default parameter models for all model equations</li>
-<li><code>Differentialequations.R</code> contains all equations used in
-the comptuational model</li>
+default parameter models for all model equations.</li>
+<li><code>DifferentialEquations.R</code> contains all equations used in
+the computational model.</li>
 <li><code>SupportingFunctions.R</code> contains two functions that can
 be used for analyzing model output: a function for identifying panic
 attacks in the simulated time series data (detectPanic) and a function
-for calculating the time to recover to baseline following a perturbation
-(detectRecover)</li>
+for computing the time to recover to baseline following a perturbation
+(detectRecover).</li>
 </ul>
 </div>
 

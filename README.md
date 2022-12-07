@@ -6,8 +6,6 @@ This project contains the computational model developed and evaluated in "Advanc
 
 -   `/R` contains the computational model, default initial values and parameter values, the equations that make up the model, and supporting functions that help evaluate model output.
 
--   `/man` contains...
-
 ### Scripts
 
 -   `Showcase.R` illustrates how to simulate data from the model, including how to modify initial values and parameter values, how to incorporate perturbations into the model simulations, how to iterate the simulation across a set of initial values or parameter values, and how to incorporate cognitive behavioral treatment components into the simulation.
