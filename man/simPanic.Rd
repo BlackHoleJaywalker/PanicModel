@@ -2,13 +2,13 @@
 \alias{simPanic}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-Function to simulate data from the computational model
+%%  ~~function to do ... ~~
 }
 \description{
-Function to simulate data from the computational model for Panic Disorder of Robinaugh and colleagues
+%%  ~~ A concise (1-5 lines) description of what the function does. ~~
 }
 \usage{
-simPanic(time, stepsize, parameters, initial, tx, pbar = TRUE)
+simPanic(time, stepsize, parameters = NULL, initial = NULL, tx = NULL, pbar = TRUE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -62,9 +62,10 @@ simPanic(time, stepsize, parameters, initial, tx, pbar = TRUE)
 ##--	or do  help(data=index)  for the standard data sets.
 
 ## The function is currently defined as
-function (time, stepsize, parameters, initial, tx, pbar = TRUE)
+function (time, stepsize, parameters = NULL, initial = NULL, 
+    tx = NULL, pbar = TRUE) 
 {
-    parameters <- pars_default
+    PS <- pars_default
     if (!is.null(parameters)) {
         names_list_def <- names(pars_default)
         names_list_spec <- names(parameters)
@@ -90,28 +91,33 @@ function (time, stepsize, parameters, initial, tx, pbar = TRUE)
     range_time <- range(time)
     daydef <- 60 * 24
     C_steps <- 60
-    PS <- parameters
     A <- INI$A
     N <- 0
     H <- INI$H
     PT <- INI$PT
     E <- INI$E
-    AF <- sqrt(A * PT)
+    if (A > 0) {
+        AF <- sqrt(A * PT)
+    }
+    else {
+        AF <- 0
+    }
     S <- INI$S
     X <- INI$X
     V <- 1/(1 + exp(1)^(-PS$V$k_S_V * (S - PS$V$h_S_V)))
     p_C <- 0.1/(1 + exp(1)^(PS$C$k_V_C * (V - PS$C$h_V_C)))
     C <- sample(0:1, size = 1, prob = c(1 - p_C, p_C))
-    sigma <- 0.3/(1 + exp(1)^(PS$N$k_V_N * ((V) - PS$N$h_V_N))) +
+    v_Adh <- c()
+    sigma <- 0.3/(1 + exp(1)^(PS$N$k_V_N * ((V) - PS$N$h_V_N))) + 
         0.5
     beta <- sigma * sqrt(2/PS$N$lambda_N - 1/PS$N$lambda_N^2)
-    k_A_PT <- 20 - 10 * 0.25^S + 5 * C
-    h_A_PT <- 0.25^S - 0.1 * C
-    outmat <- matrix(NA, nrow = length(time), ncol = 12, dimnames = list(NULL,
-        c("A", "N", "H", "PT", "S", "E", "X", "AF", "V", "C",
+    sigma <- sigma * sqrt(0.001)
+    PS$PT$k_A_PT <- 20 - 10 * 0.1^S + 5 * C
+    PS$PT$h_A_PT <- 0.25^S - 0.1 * C
+    outmat <- matrix(NA, nrow = length(time), ncol = 12, dimnames = list(NULL, 
+        c("A", "N", "H", "PT", "S", "E", "X", "AF", "V", "C", 
             "p_C", "h")))
-    outmat[1, ] <- c(A, N, H, PT, S, E, X, AF, V, C, p_C,
-        h_A_PT)
+    outmat[1, ] <- c(A, N, H, PT, S, E, X, AF, V, C, p_C, PS$PT$h_A_PT)
     obs_tracker <- 2
     day_tracker <- 2
     noise_tracker <- 0
@@ -122,85 +128,135 @@ function (time, stepsize, parameters, initial, tx, pbar = TRUE)
     daysteps <- daydef/stepsize
     timepoints <- seq(time[1], max(time), by = stepsize)
     daypoints <- seq(time[1], max(time), by = daydef)
-    if ((daydef > range_time[2]))
+    if ((daydef > range_time[2])) 
         day_tracker <- 1
     Nvec <- c(N, rep(NA, daysteps))
-    epsilon <- rnorm(daysteps, mean = PS$N$mu_N, sd = sigma)
+    sigma_scaled <- sigma/sqrt(stepsize)
+    epsilon <- rnorm(daysteps, mean = PS$N$mu_N, sd = sigma_scaled)
     for (i in 2:(daysteps + 1)) {
-        Nvec[i] <- ((1 - 1/PS$N$lambda_N) * (Nvec[i - 1]) + beta *
-            epsilon[i - 1])
+        Nvec[i] <- (1 - 1/PS$N$lambda_N) * (Nvec[i - 1]) + beta * 
+            epsilon[i - 1]
     }
     rm(epsilon)
-    if (pbar == TRUE)
-        pb <- txtProgressBar(min = 1, max = length(time), initial = 1,
+    if (pbar == TRUE) 
+        pb <- txtProgressBar(min = 1, max = length(time), initial = 1, 
             char = "-", style = 3)
     for (time_tracker in 2:length(timepoints)) {
         noise_tracker <- noise_tracker + 1
-        Anew <- A + dA_dt(A = A, PT = PT, N = Nvec[noise_tracker],
+        Anew <- A + dA_dt(A = A, PT = PT, N = Nvec[noise_tracker], 
             H = H, r_A = PS$A$r_A, s_PT_A = PS$A$s_PT_A) * stepsize
-        PTnew <- PT + dPT_dt(PT = PT, A = A, E = E, r_PT = PS$PT$r_PT,
-            s_E_PT = PS$PT$s_E_PT, h_A_PT = h_A_PT) * stepsize
-        Hnew <- H + dH_dt(PT = PT, A = A, E = E, r_H = PS$H$r_H,
-            k_A_H = PS$H$k_A_H, h_A_H = PS$H$h_A_H) * stepsize
-        Enew <- E + dE_dt(E = E, PT = PT, X = X, r_E = PS$E$r_E,
-            k_PT_E = PS$E$k_PT_E, h_PT_E = PS$E$h_PT_E) * stepsize
+        if (!is.null(PS$Tx$minuteP)) {
+            if (time_tracker == (PS$Tx$minuteP/stepsize)) 
+                Anew <- PS$Tx$strengthP
+        }
+        PTnew <- PT + dPT_dt(PT = PT, A = A, E = E, r_PT = PS$PT$r_PT, 
+            k_A_PT = PS$PT$k_A_PT, s_E_PT = PS$PT$s_E_PT, h_A_PT = PS$PT$h_A_PT) * 
+            stepsize
+        Hnew <- H + dH_dt(H = H, A = A, r_H = PS$H$r_H, k_A_H = PS$H$k_A_H, 
+            h_A_H = PS$H$h_A_H) * stepsize
+        Enew <- E + dE_dt(E = E, PT = PT, X = X, r_E = PS$E$r_E, 
+            k_PT_E = PS$E$k_PT_E, h_PT_E = PS$E$h_PT_E, TxI4 = PS$E$TxI4) * 
+            stepsize
         A <- Anew
         H <- Hnew
         PT <- PTnew
         E <- Enew
-        ifelse(A > 0, AF <- sqrt(A * PT), AF <- 0)
-        if (AF > maxAF)
+        if (A > 0) {
+            AF <- sqrt(A * PT)
+        }
+        else {
+            AF <- 0
+        }
+        if (AF > maxAF) 
             maxAF <- AF
-        if (E > maxE)
+        if (E > maxE) 
             maxE <- E
-        if (PT > maxPT)
+        if (PT > maxPT) 
             maxPT <- PT
         if (abs(timepoints[time_tracker]\%\%C_steps) < tol) {
             C <- sample(0:1, size = 1, prob = c(1 - p_C, p_C))
-            PS$Arousal$k_A_PT <- 20 - 10 * 0.25^S + 5 * C
-            PS$Arousal$h_A_PT <- 0.25^S - 0.1 * C
+            PS$PT$k_A_PT <- 20 - 10 * 0.1^S + 5 * C
+            PS$PT$h_A_PT <- 0.25^S - 0.1 * C
         }
         if (timepoints[time_tracker] == daypoints[day_tracker]) {
             if (maxAF >= PS$TS$cr_AF) {
-                S_new <- S + dS_dt(S = S, maxE = maxE,
-                  maxPT = maxPT, cr_E_S = PS$TS$cr_E_S, r_S_a = PS$TS$r_S_a,
+                S_new <- S + dS_dt(S = S, maxE = maxE, maxPT = maxPT, 
+                  cr_E_S = PS$TS$cr_E_S, r_S_a = PS$TS$r_S_a, 
                   r_S_e = PS$TS$r_S_e)
-                X_new <- X + dX_dt(S = S, maxE = maxE,
-                  maxPT = maxPT, cr_E_S = PS$TS$cr_E_S, r_X_a = PS$TS$r_X_a,
-                  r_X_e = PS$TS$r_X_r)
+                X_new <- X + dX_dt(X = X, maxE = maxE, maxPT = maxPT, 
+                  cr_E_X = PS$TS$cr_E_X, r_X_a = PS$TS$r_X_a, 
+                  r_X_e = PS$TS$r_X_e)
                 S <- S_new
                 X <- X_new
-                V_new <- V + dV_dt(V = V, S = S, r_V = PS$V$r_V,
+                V_new <- V + dV_dt(V = V, S = S, r_V = PS$V$r_V, 
                   k_S_V = PS$V$k_S_V, h_S_V = PS$V$h_S_V)
                 V <- V_new
-                sigma <- 0.3/(1 + exp(1)^(PS$N$k_V_N * ((V) -
-                  PS$N$h_V_N))) + 0.5
+                sigma <- 0.3/(1 + exp(PS$N$k_V_N * ((V) - PS$N$h_V_N))) + 
+                  0.5
                 beta <- sigma * sqrt(2/PS$N$lambda_N - 1/PS$N$lambda_N^2)
-                p_C <- 0.1/(1 + exp(1)^(PS$C$k_V_C * ((V) -
-                  PS$C$h_V_C)))
+                sigma <- sigma * sqrt(0.001)
+                p_C <- 0.1/(1 + exp(PS$C$k_V_C * ((V) - PS$C$h_V_C)))
+            }
+            if (!is.null(tx)) {
+                if (day_tracker \%in\% 1:2) 
+                  TxI4_old <- PS$E$TxI4
+                if (day_tracker \%in\% tx$I1) 
+                  S <- S * (1 - PS$Tx$I123_alpha)
+                if (day_tracker \%in\% tx$I2) 
+                  X <- X + PS$Tx$I123_alpha * (1 - X)
+                if (day_tracker \%in\% tx$I3) 
+                  S <- S * (1 - PS$Tx$I123_alpha)
+                if (day_tracker \%in\% tx$I4) {
+                  if (day_tracker \%in\% tx$I4[1:7]) 
+                    A_pulse <- 0.25
+                  if (day_tracker \%in\% tx$I4[8:14]) 
+                    A_pulse <- 0.5
+                  if (day_tracker \%in\% tx$I4[15:18]) 
+                    A_pulse <- 0.75
+                  if (day_tracker \%in\% tx$I4[19:21]) 
+                    A_pulse <- 1
+                  ind_expo <- sample(0:1, size = 1, prob = c(1 - 
+                    PS$Tx$I4Adh, PS$Tx$I4Adh))
+                  if (ind_expo == 1) 
+                    A <- A_pulse
+                  v_Adh <- c(v_Adh, ind_expo)
+                  PS$E$TxI4 <- PS$Tx$I4RdEs
+                }
+                if (day_tracker \%in\% tx$I5) {
+                  C <- 1
+                  PS$PT$k_A_PT <- 20 - 10 * 0.1^S + 5 * C
+                  PS$PT$h_A_PT <- 0.25^S - 0.1 * C
+                }
+                if (!is.null(tx$I5)) 
+                  if (day_tracker == max(tx$I5 + 7)) 
+                    PS$E$TxI4 <- TxI4_old
             }
             Nvec <- c(Nvec[noise_tracker], rep(NA, daysteps))
-            epsilon <- rnorm(daysteps, mean = PS$N$mu_N, sd = sigma)
+            sigma_scaled <- sigma/sqrt(stepsize)
+            epsilon <- rnorm(daysteps, mean = PS$N$mu_N, sd = sigma_scaled)
             for (i in 2:(daysteps + 1)) {
-                Nvec[i] <- ((1 - 1/PS$N$lambda_N) * (Nvec[i -
+                Nvec[i] <- ((1 - 1/PS$N$lambda_N) * (Nvec[i - 
                   1]) + beta * epsilon[i - 1])
             }
             rm(epsilon)
             maxAF <- maxE <- maxPT <- 0
             day_tracker <- day_tracker + 1
-            if (day_tracker > length(daypoints))
+            if (day_tracker > length(daypoints)) 
                 day_tracker <- 1
             noise_tracker <- 0
         }
         if (time[obs_tracker] == timepoints[time_tracker]) {
-            outmat[obs_tracker, ] <- c(A, N, H, PT, S, E, X,
-                AF, V, C, p_C, h_A_PT)
+            outmat[obs_tracker, ] <- c(A, N, H, PT, S, E, X, 
+                AF, V, C, p_C, PS$PT$h_A_PT)
             obs_tracker <- obs_tracker + 1
         }
-        if (pbar == TRUE)
+        if (pbar == TRUE) 
             setTxtProgressBar(pb, obs_tracker)
     }
-    return(outmat)
+    outmat <- as.data.frame(outmat)
+    outlist <- list(outmat = outmat, adherence = v_Adh, input = list(parameters = PS, 
+        initial = INI))
+    return(outlist)
   }
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the

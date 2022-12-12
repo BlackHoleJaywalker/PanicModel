@@ -34,7 +34,7 @@ simPanic <- function(time, # integer vector 1:n, indicating the time interval, w
   } # end: if
 
 
-  ## Overwrite default starting values, if specified
+  ## Overwrite default starting values, if specified ------
   INI <- initial_default
 
   # Initial values specified?
@@ -146,7 +146,7 @@ simPanic <- function(time, # integer vector 1:n, indicating the time interval, w
 
     noise_tracker <- noise_tracker + 1
 
-    # SimStep 1A: Fast Model Situations----------
+    # SimStep 1A: Fast Model Situations ----------
 
     # Update other variables based on past
     # Could be made more efficient with ordering updates but this is the safest approach
@@ -162,7 +162,7 @@ simPanic <- function(time, # integer vector 1:n, indicating the time interval, w
                       r_A = PS$A$r_A,
                       s_PT_A = PS$A$s_PT_A) * stepsize
 
-    # Minute-perturbation of Arousal
+    # Minute-intervention on Arousal
     if (!is.null(PS$Tx$minuteP)) {
       if (time_tracker == (PS$Tx$minuteP / stepsize)) Anew <- PS$Tx$strengthP
     }
@@ -274,7 +274,7 @@ simPanic <- function(time, # integer vector 1:n, indicating the time interval, w
       } # end of if AF loop
 
 
-      # ----- Add Intervention ------
+      # ----- Apply Intervention ------
 
       if(!is.null(tx)) { # if there are interventions
 
@@ -353,7 +353,7 @@ simPanic <- function(time, # integer vector 1:n, indicating the time interval, w
 
     if(pbar==TRUE) setTxtProgressBar(pb, obs_tracker)
 
-  } # End the "while loop" that carries out simulation
+  } # End: for loop over time steps
 
 
   # Simulation Step 2: Specify Function's Output ---------
@@ -367,3 +367,5 @@ simPanic <- function(time, # integer vector 1:n, indicating the time interval, w
   return(outlist)
 
 } # End of Function
+
+
