@@ -1,30 +1,35 @@
 ---
-title: "Showcase"
+title: "A Computational Model of Panic Disorder"
 output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-source("./R/CoreModel.R", local = knitr::knit_global())
+source("./R/simPanic.R", local = knitr::knit_global())
 source("./R/Defaults.R", local = knitr::knit_global())
 source("./R/DifferentialEquations.R", local = knitr::knit_global())
 source("./R/SupportingFunctions.R", local = knitr::knit_global())
 ```
 
-## Illustration 1: Simulating from the model
+## Introduction
 
-The simPanic function allows you to simulates the model's behavior for the specified amount of time (here, 60 "minutes" of simulated time). 
+The aim of this file is to introduce **simPanic**, a function that contains the computational model described in "Advancing the Network Theory of Mental Disorders: A Computational Model of Panic Disorder" (preprint: <https://psyarxiv.com/km37w/>). The computational model is a formalized theory of panic disorder. The theory proposes that panic disorder arises from a system of three interconnected feedback loops:
+
+(1) An amplifying feedback loop between autonomic arousal (A) and perceived threat (PT)
+(2) A dampening feedback loop between perceived threat and escape behavior (E)
+(3) A slow amplifying feedback loop that includes arousal schema (S), escape schema (X), avoidance behavior (V), and the aggregate behavior of arousal, perceived threat, and escape behavior
+
+The simPanic function can be used to simulate the behavior that follows from this theory. This file will walk through some of the specific things that can be done with the simPanic function.
+
+## Part 1: Simulating from the model
+
+To use the simPanic function, specify the number of time steps for which to run the simulation. Each time step corresponds to 1 minute of simulated time. Accordingly, to evaluate the behavior of the system over the course of 1 hour, run the simPanic function for 60 time steps, specifying time as follows:
 
 ```{r, results='hide'}
-out <- simPanic(time = 0:60, stepsize = .001)
+out <- simPanic(time = 0:60)
 ```
 
-The output file has three components:
-
-  1. The initial values and parameters used in the simulation (i.e., input).
-  2. Adherence to exposure exercises when a treatment is administered (i.e., adherence; see Illustration 4).
-  3. A matrix where rows are time steps and columns are variables (i.e., outmat).
-
+The simPanic function will produce a list with three elements:
 
 ```{r, results='hide'}
 out$input             
@@ -32,11 +37,15 @@ out$adherence
 out$outmat  
 ```
 
+  1. $input$: a list of the initial values and parameters used in the simulation.
+  2. $adherence$: a vector indicating whether each assigned exposure exercise was completed (0=Not Completed; 1=Completed) when exposure therapy is administered.
+  3. $outmat$: a matrix of simulation results where rows are time steps and columns are model components or parameters. 
+
 ```{r}
 dim(out$outmat)
 ```
 
-For the 'outmat' output file we have a matrix of 61 time steps (0 through 60) for 12 variables, including:
+In this case, there are 61 rows (time steps 0 through 60) and 12 components/parameters, including:
 
 * 6 "Fast-changing" Model Components: 
   + A = Arousal; 
@@ -55,8 +64,9 @@ For the 'outmat' output file we have a matrix of 61 time steps (0 through 60) fo
   + p_C = probability of entering a panic-predisposing context (C)
   + h = a parameter that helps define the effect of arousal on perceived threat
 
-### Visualize Simulation Results for Key Model Components
-We can visualize the simulation results for some of the key model components. 
+### Visualize Simulation Results
+
+In most cases, the most helpful first step is to visualize the results of the simulation. Here we plot the time series for four model components, showing how they evolve over time.
 
 ```{r}
 results <- out$outmat
@@ -73,36 +83,45 @@ legend("topleft", legend=c("Arousal","Perceived Threat","Escape","Homeostatic Fe
        lty = c(1,1,1,2), bty="n",cex=1.25)
 ```
 
-## Illustration 2: Initial Values & Parameters
-The initial values of model components and the parameters defining the relationships among model components can be changed in order to evaluate how the model behaves under different conditions. If left unspecified, simPanic will use default initial values and parameters. 
+Because there is stochastic variation in arousal, the results of the simulation will differ somewhat each time the simulation is run. Nonetheless, in this plot, you will most likely see arousal (in grey) fluctuating around 0, with the remaining components remaining pretty consistently right at 0. 
 
-To specify initial values or parameters of interest, first create a list assigning the chosen value for the relevant component or parameter. Here, we specify an initial value of 1 for arousal schema (S) and we specify a value of .55 for the parameter r_A, a rate parameter constraining the rate of change for arousal A:
+This simulated behavior gives us a sense of what the theory predicts given the default initial values and parameter settings. In this case, the most important initial value guiding the behavior of these model components is arousal schema ($S$). Arousal schema refers to beliefs or learned associations about the danger of arousal and ranges from $0$ (an absence of beliefs and learned associations indicating arousal poses or signals danger) to $1$ (strong beliefs or associations indicating arousal poses or signals maximal danger). In simPanic, arousal schema has a default value of $0.50$.
+
+```{r}
+out$outmat$S[1]
+```
+
+Accordingly, the simulation results above allow us to see what the theory predicts over the course of one hour when there is a moderate level of arousal schema. 
+
+## Part 2: Specifying Initial Values & Parameters
+
+In many cases, we will be interested in whether the system behavior changes if there is a change in either the initial values of key model components or in the parameter values for the equations that govern the relationships among model components. To specify initial values or parameters of interest, first create a list assigning the chosen value for the relevant component or parameter. Here, we specify an initial value of $1.00$ for arousal schema ($S$) and we specify a value of $0.55$ for the parameter *r_A*, a parameter that is part of the equation defining the rate of change for arousal ($A$):
 
 ```{r}
 initial_specified <- list("S"= 1)
-parameters_specified <- list("A" = list("r_A"= .55))
+parameters_specified <- list("A" = list("r_A"= 0.55))
 ```
 
-Then use that list to define initial values (initial = ) and parameters (parameters = ) in the simPanic function and run simPanic: 
+Next, use that list to define initial values ($initial = $) and parameters ($parameters = $) in the simPanic function and run simPanic: 
 
 ```{r, results='hide'}
 out2 <- simPanic(time = 0:120,
-                stepsize = .001,
                 initial = initial_specified,          
                 parameters = parameters_specified) 
 ```
 
-To confirm we successfully defined the values of interest for this simulation, we check the input initial values and parameters:
+To confirm we successfully defined the values of interest for this simulation, check the initial values and parameters in the simulation input:
 
 ```{r}
 out2$input$initial$S
 out2$input$parameters$A$r_A 
 ```
 
-We can see that, as specified, the initial S = 1 and the parameter r_A = .55. 
+We can see that, as specified, $S = 1.00$ and $r_A = 0.55$. 
 
-### Visualize Simulation Results for Key Model Components
-We can now visualize the simulation results with these new intial values and parameter settings. 
+### Visualize Simulation Results
+
+The simulation results with this new initial value and parameter value appear below. 
 
 ```{r}
 results2 <- out2$outmat
@@ -119,30 +138,33 @@ legend("bottomleft", legend = c("Arousal","Perceived Threat","Escape","Homeostat
        lty = c(1,1,1,2), bty = "n",cex = 1.25)
 ```
 
-## Illustration 3: Building in a Perturbation
-A perturbation to Arousal can be added to the model to evaluate how the system responds to a perturbation of given strength at a given time. 
+With arousal schema ($S$) now equal to $1.00$ (instead of the default value of $0.50$ examined above), the feedback loop between arousal and perceived threat is now considerably stronger. Accordingly, while results will differ for each simulation, you will likely see greater fluctuations in perceived threat than you saw in the first simulation. You may also see a rapid surge of arousal and perceived threat that seems to come spontaneously "out of the blue." In other words, you may see the system exhibit a panic attack. 
 
-For example, we can specify that the perturbation should occur at minute 10 and that the perturbation should move arousal to A=0.60. 
+## Part 3: Building in a Perturbation to the System
+
+So far, the simPanic function has been used to observe how the system behaves under different initial values and parameter settings. The simPanic function also includes the option to incorporate a perturbation to the system in order to evaluate how the system will respond to that perturbation. The built-in perturbation is intended to mirror a "biological challenge" in which researchers induce elevated arousal.
+
+For example, here we specify that the perturbation should occur at time step $10$ and that the perturbation should move arousal to $A = 0.60$. 
 
 ```{r}
 perturb_time <- 10
-perturb_strength <- .60
+perturb_strength <- 0.60
 
 parameters_specified <- list("Tx" = list("minuteP" = perturb_time, "strengthP" = perturb_strength))
-initial_specified <- list("S" = .60)
+initial_specified <- list("S" = 0.60)
 ```
 
-Then we use this list to define initial values (initial = ) and parameters (parameters = ) in the simPanic function: 
+Then we use this list to define initial values ($initial = initial_specified$) and parameters ($parameters = parameters_specified$) in the simPanic function: 
 
 ```{r, results='hide'}
-out3  <- simPanic(time = 0:60, # 1h
-                  stepsize = .001,
-                  parameters = parameters_specified,
+out3  <- simPanic(time = 0:60, 
                   initial = initial_specified,
+                  parameters = parameters_specified,
                   pbar = TRUE)
 ```
 
-### Visualize Simulation Results for Key Model Components
+### Visualize Simulation Results
+
 We can now visualize the system's response to this perturbation:
 
 ```{r}
@@ -151,7 +173,7 @@ plot.new()
 plot.window(xlim = c(0, length(results3$A)),  ylim = c(-.75, 1))
 axis(1); axis(2, las = 2)
 mtext("Minutes", side = 1, line = 3,cex = 1.25)
-rect(perturb_time, -.5, (perturb_time+1), perturb_strength, col = "grey90", border = FALSE)
+rect(perturb_time, -0.5, (perturb_time+1), perturb_strength, col = "grey90", border = FALSE)
 text(perturb_time, -0.6, "Perturbation")
 lines(results3$E, col = "red", lwd = 3)
 lines(results3$H, col = "red", lty = "dashed", lwd = 3)
@@ -162,7 +184,7 @@ legend("topright", legend = c("Arousal", "Perceived Threat", "Escape", "Homeosta
        lty = c(1,1,1,2), bty = "n")
 ```
 
-Note that the response to these perturbations are affected by stochastic variation in arousal. As a result, the response to the perturbation can be different each time the simulation is run. To illustrate, we can repeat the simulation 10 times and plot the trajectory of fear repsonse for each.
+Note again that the response to these perturbations is affected by stochastic variation in arousal. As a result, the response to the perturbation will be different each time the simulation is run. To illustrate, we can repeat the simulation 10 times and plot the trajectory of fear ($AF$; defined here as the geometric mean of arousal and perceived threat) for each simulation.
 
 ```{r}
 N_sim <- 10
@@ -172,7 +194,6 @@ results <- list()
 
 for(i in 1:N_sim) {
   out <- simPanic(time = 0:50,
-                  stepsize = .001,
                   parameters = parameters_specified,
                   initial = initial_specified,
                   pbar = FALSE)
@@ -192,29 +213,32 @@ legend("topright", legend = c("Fear"),
        lty = c(1), bty="n")
 ```
 
-## Illustration 4: Iterating Across Parameters
-By iterating across different initial values and parameters, we can evaluate how the system behaves under different conditions.
+The plot above illustrates how the response to the perturbation differs across iterations due to the stochastic variation in arousal. You will likely also see some consistency in the pattern of responses. When arousal schema ($S$) is equal to $0.60$, the system is relatively vulnerable to amplifying feedback between arousal and perceived threat. Accordingly, this perturbation to arousal is often sufficient to create runaway amplifying feedback that culminates in a panic attack.
 
-For example, we can examine how the system will respond to a range of perturbation strengths at different values of arousal schema (S). 
+## Part 4: Iterating Simulations Across Different Initial Values and Parameters
+
+By repeatedly running the perturbation simulation across a range of different initial values or parameters, we can evaluate how the system responds under different conditions.
+
+For example, we can examine how the system will respond to a range of perturbation strengths at different values of arousal schema. 
 
 First, we specify the number of simulations you want to run per condition:
 ```{r}
-N_sim <- 10
+N_sim <- 20
 ```
 
-Second, we generate a random set of perturbation strengths between 0 and 1 and specify the Arousal Schema (S) values you want to examine: 
+Second, we generate a random set of perturbation strengths between $0$ and $1$ and specify the initial values or parameter settings you want to examine. In this case, we'll examine those with very low arousal schema ($S = 0.10$) and those with moderate arousal schema ($S = 0.50$).
 ```{r}
 perturb_strengths <- runif(N_sim, 0, 1)  
-Ss <- c(.10, .50)  
+Ss <- c(0.10, 0.50)  
 ```
 
-Third, we wet the time of the perturbation and the total amount of simulated time:
+Third, we specify the timing of the perturbation and the total amount of simulated time:
 ```{r}
 perturb_time <- 10 # 10 minutes
 time <- 0:60 # 1h 
 ```
 
-Finally we can run and store the simulations: 
+Finally, we run the simulations: 
 ```{r}
 results <- list()
 
@@ -226,7 +250,6 @@ for (h in 1:length(Ss)){
     parameters_specified <- list("Tx" = list("minuteP"= perturb_time, "strengthP" = perturb_strength))
 
     out <- simPanic(time = time,
-                    stepsize = .001,
                     parameters = parameters_specified,
                     initial = initial_specified,
                     pbar = FALSE)
@@ -236,18 +259,15 @@ for (h in 1:length(Ss)){
 }
 ```
 
-From the results we compute the maximum fear (AF) in response to the perturbations in the two conditions:
+### Visualize Simulation Results
+
+To get a sense of how the system behaves in the two conditions of interest, we plot the maximum fear (AF) in response to the perturbations in the two conditions:
 ```{r}
 AFs_1 <- AFs_2 <- vector()
 for (i in 1:N_sim){
   AFs_1[i] <- max(results[[i]]$outmat$AF)
   AFs_2[i] <- max(results[[((length(Ss)-1)*N_sim)+i]]$outmat$AF)
 }
-```
-
-### Visualize Simulation Results for Key Model Components
-We can then visualize these maximum fear levels in the two conditions of interest: 
-```{r}
 plot.new()
 plot.window(xlim=c(0,1),ylim=c(0,1))
 axis(1); axis(2,las=2)
@@ -260,24 +280,32 @@ legend("topleft", 1, legend = c(paste("S =", Ss[1]), paste("S =", Ss[2])),
        pch = 19, bty = "n")
 ```
 
-## Illustration 5: Building in Treatment
+Relative to low arousal schema ($S = 0.10$), moderate arousal schema ($S = 0.50$) is associated with greater maximum fear in response to the perturbation. The difference between conditions is greater when perturbation strength is high, but, notably, is often still present even when perturbation strength is relatively low. Accordingly, the response to even relatively modest perturbations to arousal can indicate how high the arousal schema value is and, thus, gives us an indirect indication of how vulnerable the system is to panic attacks.
 
-Finally, we can simulate the impact of treatment. A cognitive behavioral therapy [CBT] intervention is built into simPanic. This treatment includes five intervention components:
+## Part 5: Building in Treatment of the System
 
-1. I1 = Psychoeducation targeting Arousal Schema (S)
-2. I2 = Psychoeducation targeting Escape Schema (X)
-3. I3 = Cognitive Restructuring targeting Arousal Schema (S)
-4. I4 = Interoceptive Exposure
-5. I5 = In Vivo Exposure
+In addition to having a built in perturbation to arousal, simPanic also contains a built in treatment:a cognitive behavioral therapy [CBT] intervention. This treatment includes five intervention components (I1-I5):
 
-To incorporate the intervention components into the simulation, specify a baseline period (in days and in weeks) and then specify when the treatment components should be delivered. Here we specify a baseline period of 0 weeks and 1 day: 
+1. I1 = Psychoeducation targeting arousal schema (S)
+2. I2 = Psychoeducation targeting escape schema (X)
+3. I3 = Cognitive restructuring targeting arousal schema (S)
+4. I4 = Interoceptive exposure
+5. I5 = In vivo exposure
+
+To incorporate the intervention components into the simulation, specify a baseline period (in days and in weeks). Here we specify a baseline period of $0$ weeks and $1$ day: 
 
 ```{r}
 baseline_weeks <- 0
 baseline_days <- 1
 ```
 
-Furthermore we specify that psychoeducation targeting S (I1) should occurs at Day 2; psychoeducation targeting X (I2) should occurs at Day 2; cognitive restructing targeting S (I3) should occurs at Day 9 and 16; interoceptive exposure (I4) should occur at Days 9-36; and should occur in conjunction with in vivo exposure (I5) at Days 23-36. 
+Next, specify when the treatment components should be delivered. Here, we specify that:
+
+(1) Psychoeducation targeting S (I1) should occurs at Day 2
+(2) Psychoeducation targeting X (I2) should occurs at Day 2
+(3) Cognitive restructing targeting S (I3) should occurs at Day 9 and 16
+(4) Interoceptive exposure (I4) should occur at Days 9-36
+(5) Interoceptive exposure should be chained with in vivo exposure (I5) at Days 23-36. 
 
 ```{r}
 tx <- list("I1" = baseline_days+baseline_weeks*7+c(1),
@@ -307,31 +335,24 @@ When specifying the time for the simulation to run, ensure there is enough time 
 time <- 0:(60*24*7*5)
 ```
 
-Finally, given that this is a treatment, specify S and X values consistent with panic disorder: 
+Finally, given that this is a treatment, we will specify S and X values consistent with panic disorder: 
 ```{r}
-initial_specified <- list("S" = .80, "X" = .20)
+initial_specified <- list("S" = 0.80, "X" = 0.20)
 ```
 
-Use the simPanic function to simulate the specified treatment:
+We then use the simPanic function to simulate the specified treatment. Note that relative to earlier simulations, this simulation will take some time to complete.
 ```{r, results='hide'}
 out4 <- simPanic(time = time,
-                  stepsize = .001,
                   parameters = parameters_specified,
                   initial = initial_specified,
                   tx = tx,
                   pbar = TRUE)
 ```
 
-We can now take a look at the results of this simulated treatment. 
+Once the simulation has finished, we can now take a look at the results of this simulated treatment. 
 
-Adherence gives a vector of all assigned exposure exercises, where 1=Completed. 0=Not Completed. The mean of this vector gives the proportion of completed exposures. 
+### Visualize Simulation Results
 
-```{r}
-out4$adherence
-mean(out4$adherence)
-```
-
-### Visualize Simulation Results for Key Model Components
 The code below produces a visualization depicting when treatment components were delivered and how the treatment affected arousal schema and escape schema values. 
 
 ```{r}
@@ -371,3 +392,19 @@ legend("right", 1, legend = c("Psychoeducation", "Cognitive Restructuring", "Exp
        inset = c(- 0.45, 0),
        pch = c(17, 15, 19), bty = "n")}
 ```
+
+The results of the treatment will depend on the parameters you have specified, particular those relating to psychoeducation efficacy (*I123_alpha*), adherence to exposure exercises (*I4Adh*), and adherence to the instruction to refrain from escape behavior during exposure exercises (*I4RdEs*). 
+```{r}
+out4$input$parameters$Tx$I123_alpha # Efficacy (in % reduction) for I1-3
+out4$input$parameters$Tx$I4Adh # Adherence (in % likelihood of completing) for I4-I5
+out4$input$parameters$Tx$I4RdEs # Extent to which instruction to refrain from escape behavior raises threshold at which perceived threat will lead to escape (0-1)
+```
+
+Notably, the *I4Adh* parameter defines the probability of completing any given exposure exercise, not the proportion of actual exposure exercises complete. That value can be obtaineed by the $adherence$ element of the list produced by the simPanic function. The adherence element is a vector indicating whether assigned exposure exercises were completed, where $1$=Completed and $0$=Not Completed. The mean of this vector gives the proportion of completed exposures. 
+
+```{r}
+out4$adherence
+mean(out4$adherence)
+```
+
+By examining the observed simulation results in light of these parameter values, we can gain insight into the conditions under which treatment succeeds, conditions under which it fails, and, potentially, gain insight into how the treatment might be improved. 

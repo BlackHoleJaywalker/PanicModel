@@ -5,6 +5,6 @@ Version: 0.1.0
 Author: Donald Robinaugh <d.robinaugh@northeastern.edu>; Jonas Haslbeck <jonashaslbeck@gmail.com>, Oisin Ryan <o.ryan@uu.nl>
 Maintainer: Donald Robinaugh <d.robinaugh@northeastern.edu>; Jonas Haslbeck <jonashaslbeck@gmail.com>, Oisin Ryan <o.ryan@uu.nl>
 Description: This project contains the computational model developed and evaluated in "Advancing the Network Theory of Mental Disorders: A Computational Model of Panic Disorder" (preprint: <https://psyarxiv.com/km37w/>). It can be used to simulate data from the model in order to evaluate its behavior under a range of conditions and derive model predictions.
-License: 
+License: GPL (>= 2)
 Encoding: UTF-8
 LazyData: true

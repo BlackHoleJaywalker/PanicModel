@@ -1,18 +1,17 @@
 ### d.robinaugh@northeasetern.edu; jonashaslbeck@gmail.com; o.ryan@uu.nl; December 2022
 
 simPanic <- function(time, # integer vector 1:n, indicating the time interval, where 1 is one "minute"
-                     stepsize, # stepsize; <= 1
+                     stepsize = NULL, # stepsize; <= 1
                      parameters = NULL, # specify parameter values for the model
                      initial = NULL, # specify initial values for state variables
                      tx = NULL, # specify any interventions to occur during the simulation
-                     pbar = TRUE) # progress bar?
+                     pbar = TRUE) # progress bar
 
 {
 
   # Setup Step 0: Overwrite default with specified parameters/initial values
 
   ## Overwrite default parameters, if specified ------
-
   PS <- pars_default
 
   # Parameters specified?
@@ -33,7 +32,6 @@ simPanic <- function(time, # integer vector 1:n, indicating the time interval, w
     }
   } # end: if
 
-
   ## Overwrite default starting values, if specified ------
   INI <- initial_default
 
@@ -50,6 +48,10 @@ simPanic <- function(time, # integer vector 1:n, indicating the time interval, w
 
   } # end: if
 
+  ## Specify simulation parameters, if not previously specified
+  if (is.null(stepsize)) {
+    stepsize<-sim_default$stepsize
+  } # end: if
 
   # Setup Step 1: Import Time Scale and Default Parameters --------
 
@@ -220,7 +222,7 @@ simPanic <- function(time, # integer vector 1:n, indicating the time interval, w
       # Update C, the situation
       C <- sample(0:1, size = 1, prob = c(1 - p_C, p_C))
 
-      PS$PT$k_A_PT <- 20 - 10 * 0.1^S + 5 * C # updated based on Don's email from Oct 13
+      PS$PT$k_A_PT <- 20 - 10 * 0.1^S + 5 * C # update parameters determined by arousal schema
       PS$PT$h_A_PT <- 0.25^S - 0.1 * C # update parameters determined by arousal schema
 
     } # end if: situation update

@@ -1,270 +1,82 @@
 \name{simPanic}
 \alias{simPanic}
-%- Also NEED an '\alias' for EACH other topic documented here.
-\title{
-%%  ~~function to do ... ~~
-}
+\title{simPanic: a computational model of panic disorder}
 \description{
-%%  ~~ A concise (1-5 lines) description of what the function does. ~~
-}
+The simPanic function contains a computational model of panic disorder as described in "Advancing the Network Theory of Mental Disorders: A Computational Model of Panic Disorder" (<https://psyarxiv.com/km37w/>).}
 \usage{
-simPanic(time, stepsize, parameters = NULL, initial = NULL, tx = NULL, pbar = TRUE)
+simPanic(time, stepsize=NULL, parameters = NULL,
+         initial = NULL, tx = NULL, pbar = TRUE)
 }
-%- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{time}{
-%%     ~~Describe \code{time} here~~
+  \item{time}{An integer vector specifying the sequence of time steps to be simulated. For example, 0:60 will perform the simulation for 60 time steps (0 through 60). 1 time step corresponds to 1 minute of simulated time.}
+  \item{stepsize}{A numeric value specifying the step size to be used in Euler's method for numerical integration. Smaller step size allows for a better approximation but is more computationally intensive. Defaults to \code{stepsize=0.01}.}
+  \item{parameters}{A list specifying the parameters used for the model equations. The full list of default parameters can be found in '/R/Defaults.R'.}
+  \item{initial}{A list specifying the initial values for all model components. The full list of default parameters can be found in '/R/Defaults.R'}
+
+  \item{tx}{A list specifying the timing of 5 intervention components (I1-I5). I1 specifies the timing of psychoeducation targeting arousal schema (S). I2 specifies the timing of psychoeducation targeting escape schema (X). I3 specifies the timing of cognitive restructuring targeting arousal schema (S). I4 specifies the timing of interoceptive exposure. I5 specifies the timing of in vivo exposure. If unspecified, interventions are not delivered.}
+
+  \item{pbar}{A logical value specifying whether to display a progress bar. Defaults to \code{pbar=TRUE}}
 }
-  \item{stepsize}{
-%%     ~~Describe \code{stepsize} here~~
-}
-  \item{parameters}{
-%%     ~~Describe \code{parameters} here~~
-}
-  \item{initial}{
-%%     ~~Describe \code{initial} here~~
-}
-  \item{tx}{
-%%     ~~Describe \code{tx} here~~
-}
-  \item{pbar}{
-%%     ~~Describe \code{pbar} here~~
-}
-}
-\details{
-%%  ~~ If necessary, more details than the description above ~~
-}
+
+
+
+
 \value{
-%%  ~Describe the value returned
-%%  If it is a LIST, use
-%%  \item{comp1 }{Description of 'comp1'}
-%%  \item{comp2 }{Description of 'comp2'}
-%% ...
+The simPanic function will produce an list with three elements:
+\item{input}{A list of the initial values and parameters used in the simulation}
+\item{adherence}{A vector indicating whether each assigned exposure exercise was completed (0=Not Completed; 1=Completed) when exposure therapy is administered.}
+\item{outmat}{A matrix of simulation results where rows are time steps and columns are model components or parameters}
 }
+
+\author{Donald Robinaugh <d.robinaugh@northeasetern.edu>; Jonas Haslbeck <jonashaslbeck@gmail.com>; Oisin Ryan <o.ryan@uu.nl>}
+
 \references{
-%% ~put references to the literature/web site here ~
-}
-\author{
-%%  ~~who you are~~
-}
-\note{
-%%  ~~further notes~~
-}
+Robinaugh, D., Haslbeck, J., Waldorp, L., Kossakowski, J., Fried, E.I., Millner, A., McNally, R.J., van Nes, E.H., Scheffer, M., Kendler, K.S. and Borsboom, D. 2022. Advancing the network theory of mental disorders: A computational model of panic disorder. <https://psyarxiv.com/km37w/>}
 
-%% ~Make other sections like Warning with \section{Warning }{....} ~
 
-\seealso{
-%% ~~objects to See Also as \code{\link{help}}, ~~~
-}
 \examples{
-##---- Should be DIRECTLY executable !! ----
-##-- ==>  Define data, use random,
-##--	or do  help(data=index)  for the standard data sets.
 
-## The function is currently defined as
-function (time, stepsize, parameters = NULL, initial = NULL, 
-    tx = NULL, pbar = TRUE) 
-{
-    PS <- pars_default
-    if (!is.null(parameters)) {
-        names_list_def <- names(pars_default)
-        names_list_spec <- names(parameters)
-        n_spec <- length(names_list_spec)
-        for (i in 1:n_spec) {
-            pars_spec_i <- parameters[[names_list_spec[i]]]
-            n_pars_spec_i <- length(pars_spec_i)
-            names_list_spec_j <- names(pars_spec_i)
-            for (j in 1:n_pars_spec_i) {
-                PS[[names_list_spec[i]]][[names_list_spec_j[j]]] <- parameters[[names_list_spec[i]]][[names_list_spec_j[j]]]
-            }
-        }
-    }
-    INI <- initial_default
-    if (!is.null(initial)) {
-        names_list_ini_def <- names(initial_default)
-        names_list_ini_def <- names(initial)
-        n_spec_ini <- length(names_list_ini_def)
-        for (i in 1:n_spec_ini) {
-            INI[[names_list_ini_def[i]]] <- initial[[names_list_ini_def[i]]]
-        }
-    }
-    range_time <- range(time)
-    daydef <- 60 * 24
-    C_steps <- 60
-    A <- INI$A
-    N <- 0
-    H <- INI$H
-    PT <- INI$PT
-    E <- INI$E
-    if (A > 0) {
-        AF <- sqrt(A * PT)
-    }
-    else {
-        AF <- 0
-    }
-    S <- INI$S
-    X <- INI$X
-    V <- 1/(1 + exp(1)^(-PS$V$k_S_V * (S - PS$V$h_S_V)))
-    p_C <- 0.1/(1 + exp(1)^(PS$C$k_V_C * (V - PS$C$h_V_C)))
-    C <- sample(0:1, size = 1, prob = c(1 - p_C, p_C))
-    v_Adh <- c()
-    sigma <- 0.3/(1 + exp(1)^(PS$N$k_V_N * ((V) - PS$N$h_V_N))) + 
-        0.5
-    beta <- sigma * sqrt(2/PS$N$lambda_N - 1/PS$N$lambda_N^2)
-    sigma <- sigma * sqrt(0.001)
-    PS$PT$k_A_PT <- 20 - 10 * 0.1^S + 5 * C
-    PS$PT$h_A_PT <- 0.25^S - 0.1 * C
-    outmat <- matrix(NA, nrow = length(time), ncol = 12, dimnames = list(NULL, 
-        c("A", "N", "H", "PT", "S", "E", "X", "AF", "V", "C", 
-            "p_C", "h")))
-    outmat[1, ] <- c(A, N, H, PT, S, E, X, AF, V, C, p_C, PS$PT$h_A_PT)
-    obs_tracker <- 2
-    day_tracker <- 2
-    noise_tracker <- 0
-    tol <- stepsize * 0.01
-    maxAF <- AF
-    maxE <- E
-    maxPT <- PT
-    daysteps <- daydef/stepsize
-    timepoints <- seq(time[1], max(time), by = stepsize)
-    daypoints <- seq(time[1], max(time), by = daydef)
-    if ((daydef > range_time[2])) 
-        day_tracker <- 1
-    Nvec <- c(N, rep(NA, daysteps))
-    sigma_scaled <- sigma/sqrt(stepsize)
-    epsilon <- rnorm(daysteps, mean = PS$N$mu_N, sd = sigma_scaled)
-    for (i in 2:(daysteps + 1)) {
-        Nvec[i] <- (1 - 1/PS$N$lambda_N) * (Nvec[i - 1]) + beta * 
-            epsilon[i - 1]
-    }
-    rm(epsilon)
-    if (pbar == TRUE) 
-        pb <- txtProgressBar(min = 1, max = length(time), initial = 1, 
-            char = "-", style = 3)
-    for (time_tracker in 2:length(timepoints)) {
-        noise_tracker <- noise_tracker + 1
-        Anew <- A + dA_dt(A = A, PT = PT, N = Nvec[noise_tracker], 
-            H = H, r_A = PS$A$r_A, s_PT_A = PS$A$s_PT_A) * stepsize
-        if (!is.null(PS$Tx$minuteP)) {
-            if (time_tracker == (PS$Tx$minuteP/stepsize)) 
-                Anew <- PS$Tx$strengthP
-        }
-        PTnew <- PT + dPT_dt(PT = PT, A = A, E = E, r_PT = PS$PT$r_PT, 
-            k_A_PT = PS$PT$k_A_PT, s_E_PT = PS$PT$s_E_PT, h_A_PT = PS$PT$h_A_PT) * 
-            stepsize
-        Hnew <- H + dH_dt(H = H, A = A, r_H = PS$H$r_H, k_A_H = PS$H$k_A_H, 
-            h_A_H = PS$H$h_A_H) * stepsize
-        Enew <- E + dE_dt(E = E, PT = PT, X = X, r_E = PS$E$r_E, 
-            k_PT_E = PS$E$k_PT_E, h_PT_E = PS$E$h_PT_E, TxI4 = PS$E$TxI4) * 
-            stepsize
-        A <- Anew
-        H <- Hnew
-        PT <- PTnew
-        E <- Enew
-        if (A > 0) {
-            AF <- sqrt(A * PT)
-        }
-        else {
-            AF <- 0
-        }
-        if (AF > maxAF) 
-            maxAF <- AF
-        if (E > maxE) 
-            maxE <- E
-        if (PT > maxPT) 
-            maxPT <- PT
-        if (abs(timepoints[time_tracker]\%\%C_steps) < tol) {
-            C <- sample(0:1, size = 1, prob = c(1 - p_C, p_C))
-            PS$PT$k_A_PT <- 20 - 10 * 0.1^S + 5 * C
-            PS$PT$h_A_PT <- 0.25^S - 0.1 * C
-        }
-        if (timepoints[time_tracker] == daypoints[day_tracker]) {
-            if (maxAF >= PS$TS$cr_AF) {
-                S_new <- S + dS_dt(S = S, maxE = maxE, maxPT = maxPT, 
-                  cr_E_S = PS$TS$cr_E_S, r_S_a = PS$TS$r_S_a, 
-                  r_S_e = PS$TS$r_S_e)
-                X_new <- X + dX_dt(X = X, maxE = maxE, maxPT = maxPT, 
-                  cr_E_X = PS$TS$cr_E_X, r_X_a = PS$TS$r_X_a, 
-                  r_X_e = PS$TS$r_X_e)
-                S <- S_new
-                X <- X_new
-                V_new <- V + dV_dt(V = V, S = S, r_V = PS$V$r_V, 
-                  k_S_V = PS$V$k_S_V, h_S_V = PS$V$h_S_V)
-                V <- V_new
-                sigma <- 0.3/(1 + exp(PS$N$k_V_N * ((V) - PS$N$h_V_N))) + 
-                  0.5
-                beta <- sigma * sqrt(2/PS$N$lambda_N - 1/PS$N$lambda_N^2)
-                sigma <- sigma * sqrt(0.001)
-                p_C <- 0.1/(1 + exp(PS$C$k_V_C * ((V) - PS$C$h_V_C)))
-            }
-            if (!is.null(tx)) {
-                if (day_tracker \%in\% 1:2) 
-                  TxI4_old <- PS$E$TxI4
-                if (day_tracker \%in\% tx$I1) 
-                  S <- S * (1 - PS$Tx$I123_alpha)
-                if (day_tracker \%in\% tx$I2) 
-                  X <- X + PS$Tx$I123_alpha * (1 - X)
-                if (day_tracker \%in\% tx$I3) 
-                  S <- S * (1 - PS$Tx$I123_alpha)
-                if (day_tracker \%in\% tx$I4) {
-                  if (day_tracker \%in\% tx$I4[1:7]) 
-                    A_pulse <- 0.25
-                  if (day_tracker \%in\% tx$I4[8:14]) 
-                    A_pulse <- 0.5
-                  if (day_tracker \%in\% tx$I4[15:18]) 
-                    A_pulse <- 0.75
-                  if (day_tracker \%in\% tx$I4[19:21]) 
-                    A_pulse <- 1
-                  ind_expo <- sample(0:1, size = 1, prob = c(1 - 
-                    PS$Tx$I4Adh, PS$Tx$I4Adh))
-                  if (ind_expo == 1) 
-                    A <- A_pulse
-                  v_Adh <- c(v_Adh, ind_expo)
-                  PS$E$TxI4 <- PS$Tx$I4RdEs
-                }
-                if (day_tracker \%in\% tx$I5) {
-                  C <- 1
-                  PS$PT$k_A_PT <- 20 - 10 * 0.1^S + 5 * C
-                  PS$PT$h_A_PT <- 0.25^S - 0.1 * C
-                }
-                if (!is.null(tx$I5)) 
-                  if (day_tracker == max(tx$I5 + 7)) 
-                    PS$E$TxI4 <- TxI4_old
-            }
-            Nvec <- c(Nvec[noise_tracker], rep(NA, daysteps))
-            sigma_scaled <- sigma/sqrt(stepsize)
-            epsilon <- rnorm(daysteps, mean = PS$N$mu_N, sd = sigma_scaled)
-            for (i in 2:(daysteps + 1)) {
-                Nvec[i] <- ((1 - 1/PS$N$lambda_N) * (Nvec[i - 
-                  1]) + beta * epsilon[i - 1])
-            }
-            rm(epsilon)
-            maxAF <- maxE <- maxPT <- 0
-            day_tracker <- day_tracker + 1
-            if (day_tracker > length(daypoints)) 
-                day_tracker <- 1
-            noise_tracker <- 0
-        }
-        if (time[obs_tracker] == timepoints[time_tracker]) {
-            outmat[obs_tracker, ] <- c(A, N, H, PT, S, E, X, 
-                AF, V, C, p_C, PS$PT$h_A_PT)
-            obs_tracker <- obs_tracker + 1
-        }
-        if (pbar == TRUE) 
-            setTxtProgressBar(pb, obs_tracker)
-    }
-    outmat <- as.data.frame(outmat)
-    outlist <- list(outmat = outmat, adherence = v_Adh, input = list(parameters = PS, 
-        initial = INI))
-    return(outlist)
-  }
+\dontrun{
+
+# 60 "minute" simulation with default intial values and parameters
+
+simPanic(time = 0:60)
+
+
+# 120 "minute" simulation with specified intial values and parameters
+
+initial_specified <- list("S"= 1)
+parameters_specified <- list("A" = list("r_A"= 0.55))
+simPanic(time = 0:120,initial = initial_specified,parameters = parameters_specified)
+
+
+# 60 "minute" simulation with specified intial values and a perturbation to arousal
+
+perturb_time <- 10
+perturb_strength <- 0.60
+parameters_specified <- list("Tx" = list("minuteP" = perturb_time, "strengthP" = perturb_strength))
+initial_specified <- list("S" = 0.60)
+simPanic(time = 0:60, initial = initial_specified, parameters = parameters_specified)
+
+
+# 5 week treatment simulation
+
+baseline_weeks <- 0
+baseline_days <- 1
+tx <- list("I1" = baseline_days+baseline_weeks*7+c(1),
+           "I2" = baseline_days+baseline_weeks*7+c(1),
+           "I3" = (baseline_days+baseline_weeks+(1:2)*7)+c(1),
+           "I4" = (baseline_days+baseline_weeks*7)+7+(1:(7*4)),
+           "I5" = baseline_days+(baseline_weeks+3)*7+(1:14)[rep(c(TRUE,TRUE), 7)])
+parameters_specified <- list("Tx" = list("I123_alpha" = rbeta(n = 1, 1, 9),
+                                         "I4Adh" = rbeta(n = 1, 2, 2/3),
+                                         "I4RdEs" = rbeta(n = 1, 2, 2/3)))
+initial_specified <- list("S" = 0.80, "X" = 0.20)
+time <- 0:(60*24*7*5)
+simPanic(time = time, parameters = parameters_specified, initial = initial_specified, tx = tx)
+
 }
-% Add one or more standard keywords, see file 'KEYWORDS' in the
-% R documentation directory (show via RShowDoc("KEYWORDS")):
-% \keyword{ ~kwd1 }
-% \keyword{ ~kwd2 }
-% Use only one keyword per line.
-% For non-standard keywords, use \concept instead of \keyword:
-% \concept{ ~cpt1 }
-% \concept{ ~cpt2 }
-% Use only one concept per line.
+
+}
+
+

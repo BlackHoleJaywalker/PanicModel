@@ -1,3 +1,6 @@
 exportPattern("^[[:alpha:]]+")
 
 export(simPanic)
+
+importFrom("stats", "rnorm")
+    importFrom("utils", "setTxtProgressBar", "txtProgressBar")

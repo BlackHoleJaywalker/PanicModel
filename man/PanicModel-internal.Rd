@@ -17,9 +17,7 @@
 \author{Jonas Haslbeck}
 
 \details{
-
 These are internal functions.
-
 }
 
 \keyword{internal}
