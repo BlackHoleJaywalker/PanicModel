@@ -171,12 +171,12 @@ simPanic <- function(time, # integer vector 1:n, indicating the time interval, w
 
     # Perceived Threat
     PTnew <- PT + dPT_dt(PT = PT,
-                        A = A,
-                        E = E,
-                        r_PT = PS$PT$r_PT,
-                        k_A_PT = PS$PT$k_A_PT,
-                        s_E_PT = PS$PT$s_E_PT,
-                        h_A_PT = PS$PT$h_A_PT) * stepsize
+                         A = A,
+                         E = E,
+                         r_PT = PS$PT$r_PT,
+                         k_A_PT = PS$PT$k_A_PT,
+                         s_E_PT = PS$PT$s_E_PT,
+                         h_A_PT = PS$PT$h_A_PT) * stepsize
 
 
     # Homoestatic
@@ -232,8 +232,8 @@ simPanic <- function(time, # integer vector 1:n, indicating the time interval, w
 
     if (timepoints[time_tracker] == daypoints[day_tracker]) {  # Is it the end of a Day?
 
-      # Arousal Schema: As a function of Arousal, Perceived Threat, and Escape
-      if (maxAF >= PS$TS$cr_AF){
+      # S, X, and V can only change if maxAF is above a critical threshold
+      if (maxAF >= PS$TS$cr_AF) { #
 
         # Update Arousal Schema
         S_new <- S + dS_dt(S = S,
@@ -255,25 +255,25 @@ simPanic <- function(time, # integer vector 1:n, indicating the time interval, w
         S <- S_new
         X <- X_new
 
-        # Update Avoidance
-        V_new <- V + dV_dt(V = V,
-                           S = S,
-                           r_V = PS$V$r_V,
-                           k_S_V = PS$V$k_S_V,
-                           h_S_V = PS$V$h_S_V)
+      } # end of if AF statement
 
-        # Overwrite current values
-        V <- V_new
+      # Update Avoidance
+      V_new <- V + dV_dt(V = V,
+                         S = S,
+                         r_V = PS$V$r_V,
+                         k_S_V = PS$V$k_S_V,
+                         h_S_V = PS$V$h_S_V)
 
-        # Update Noise draw parameters
-        sigma <- 0.30 / (1 + exp(PS$N$k_V_N * ((V) - PS$N$h_V_N))) + 0.50
-        beta <-  sigma * sqrt(2 / PS$N$lambda_N - 1 / PS$N$lambda_N ^ 2)
-        sigma <- sigma * sqrt(.001) # May 2nd, 22: This is done so that the model is still calibrated after adding the proper wiener scaling sqrt(timestep)
+      # Overwrite current values
+      V <- V_new
 
-        # Update Situation
-        p_C <- 0.1 / (1 + exp(PS$C$k_V_C * ((V) - PS$C$h_V_C)))
+      # Update Noise draw parameters
+      sigma <- 0.30 / (1 + exp(PS$N$k_V_N * ((V) - PS$N$h_V_N))) + 0.50
+      beta <-  sigma * sqrt(2 / PS$N$lambda_N - 1 / PS$N$lambda_N ^ 2)
+      sigma <- sigma * sqrt(stepsize) # May 2nd, 22: This is done so that the model is still calibrated after adding the proper wiener scaling sqrt(timestep)
 
-      } # end of if AF loop
+      # Update Situation
+      p_C <- 0.1 / (1 + exp(PS$C$k_V_C * ((V) - PS$C$h_V_C)))
 
 
       # ----- Apply Intervention ------
