@@ -57,7 +57,8 @@ simPanic <- function(time, # integer vector 1:n, indicating the time interval, w
 
   range_time <- range(time) # Range of time steps, 1:number of specified iterations
   daydef <- 60*24 # How many units of time do we update the "slow" variables? 1 Day (60 minutes * 24 hours)
-  C_steps <- 60 # update the PT-related parameters (context/ situation variables) every hour
+  # PS$C$C_steps <- 60 # update the PT-related parameters (context/ situation variables) every hour
+
 
   # Setup Step 2: Specify Components ---------
 
@@ -220,7 +221,7 @@ simPanic <- function(time, # integer vector 1:n, indicating the time interval, w
 
     # ------- Hour-level: Update --------
 
-    if (abs(timepoints[time_tracker] %% C_steps) < tol) {
+    if (abs(timepoints[time_tracker] %% PS$C$C_steps) < tol) {
 
       # Update C, the situation
       C <- sample(0:1, size = 1, prob = c(1 - p_C, p_C))

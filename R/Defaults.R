@@ -30,7 +30,8 @@ pars_default <- list("A" = list("r_A"= 0.5,
 
                      "C" = list("k_V_C" = 5,
                                 "h_V_C" = 0.5,
-                                "cr_E_C" = 0.5),
+                                "cr_E_C" = 0.5,
+                                "C_steps" = 60),
 
                      "TS" = list("cr_AF" = 0.50,
                                  "cr_E_S" = 0.25,
