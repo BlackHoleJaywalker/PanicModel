@@ -195,6 +195,9 @@ simPanic <- function(time, # integer vector 1:n, indicating the time interval, w
                       h_PT_E = PS$E$h_PT_E,
                       TxI4 = PS$E$TxI4) * stepsize
 
+    # If Escape larger than threshold, P(Context=1)=0
+    if(E > PS$C$cr_E_C) C <- 0
+
     # Overwrite current values
     A  <- Anew
     H  <- Hnew
