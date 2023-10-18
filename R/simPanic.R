@@ -318,10 +318,11 @@ simPanic <- function(time, # integer vector 1:n, indicating the time interval, w
         # Intervention 5:
         if(day_tracker %in% tx$I5) {
           # Switch Context on for 1 h (note: holds only for 1h, because after it will be overwritten by the 1h loop above)
+          if(ind_expo==1){
           C <- 1
           PS$PT$k_A_PT <- 20 - 10 * 0.1^S + 5 * C
-          PS$PT$h_A_PT <- 0.25^S - 0.1 * C
-        }
+          PS$PT$h_A_PT <- 0.25^S - 0.1 * C}
+          }
 
         # One week after last intervention: set E-parameter back
         if(!is.null(tx$I5)) if(day_tracker == max(tx$I5 + 7)) PS$E$TxI4 <- TxI4_old
@@ -338,9 +339,9 @@ simPanic <- function(time, # integer vector 1:n, indicating the time interval, w
       for(i in 2:(daysteps+1)){
         Nvec[i] <- ((1 - 1/PS$N$lambda_N) * (Nvec[i-1]) + beta*epsilon[i-1])
       }
-      rm(epsilon) # ??  ### DR: ??
+      rm(epsilon) # Note: Remove Epsilon
 
-      # Re-set maximum day-trackers (check with Don what is the "floor" of these variables)
+      # Re-set maximum day-trackers (set to "floor" of these variables)
       maxAF <- maxE <- maxPT <- 0
 
       # Re-set the noise_tracker and change day tracker

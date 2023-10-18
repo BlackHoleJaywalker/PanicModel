@@ -32,14 +32,13 @@ out <- simPanic(time = 0:60)
 The simPanic function will produce a list with three elements:
 
 ```{r, results='hide'}
-out$input             
-out$adherence 
-out$outmat  
+names(out)
 ```
 
-  1. $input$: a list of the initial values and parameters used in the simulation.
+  1. $outmat$: a matrix of simulation results where rows are time steps and columns are model components or parameters. 
   2. $adherence$: a vector indicating whether each assigned exposure exercise was completed (0=Not Completed; 1=Completed) when exposure therapy is administered.
-  3. $outmat$: a matrix of simulation results where rows are time steps and columns are model components or parameters. 
+  3. $input$: a list of the initial values and parameters used in the simulation.
+
 
 ```{r}
 dim(out$outmat)
