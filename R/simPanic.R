@@ -130,12 +130,13 @@ simPanic <- function(time, # integer vector 1:n, indicating the time interval, w
 
   # Draw noise for a day at a time
   Nvec <- c(N, rep(NA, daysteps))
-  sigma_scaled <- sigma/sqrt(stepsize)
+  sigma_scaled <- sigma / sqrt(stepsize)
   epsilon <- rnorm(daysteps, mean = PS$N$mu_N, sd = sigma_scaled)
 
   for (i in 2:(daysteps+1)){
     Nvec[i] <- (1 - 1/PS$N$lambda_N) * (Nvec[i-1]) + beta*epsilon[i-1]
   }
+  # Nvec <- Nvec * sqrt(stepsize)
   rm(epsilon)
 
 
@@ -274,11 +275,10 @@ simPanic <- function(time, # integer vector 1:n, indicating the time interval, w
       # Update Noise draw parameters
       sigma <- 0.30 / (1 + exp(PS$N$k_V_N * ((V) - PS$N$h_V_N))) + 0.50
       beta <-  sigma * sqrt(2 / PS$N$lambda_N - 1 / PS$N$lambda_N ^ 2)
-      sigma <- sigma * sqrt(stepsize) # May 2nd, 22: This is done so that the model is still calibrated after adding the proper wiener scaling sqrt(timestep)
+      sigma <- sigma * sqrt(0.001) # May 2nd, 22: This is done so that the model is still calibrated after adding the proper wiener scaling sqrt(timestep)
 
       # Update Situation
       p_C <- 0.1 / (1 + exp(PS$C$k_V_C * ((V) - PS$C$h_V_C)))
-
 
       # ----- Apply Intervention ------
 
@@ -319,10 +319,10 @@ simPanic <- function(time, # integer vector 1:n, indicating the time interval, w
         if(day_tracker %in% tx$I5) {
           # Switch Context on for 1 h (note: holds only for 1h, because after it will be overwritten by the 1h loop above)
           if(ind_expo==1){
-          C <- 1
-          PS$PT$k_A_PT <- 20 - 10 * 0.1^S + 5 * C
-          PS$PT$h_A_PT <- 0.25^S - 0.1 * C}
-          }
+            C <- 1
+            PS$PT$k_A_PT <- 20 - 10 * 0.1^S + 5 * C
+            PS$PT$h_A_PT <- 0.25^S - 0.1 * C}
+        }
 
         # One week after last intervention: set E-parameter back
         if(!is.null(tx$I5)) if(day_tracker == max(tx$I5 + 7)) PS$E$TxI4 <- TxI4_old
@@ -333,12 +333,13 @@ simPanic <- function(time, # integer vector 1:n, indicating the time interval, w
       # Draw noise for the next week again, remove epsilon because it's not needed
       Nvec <- c(Nvec[noise_tracker], rep(NA,daysteps))
 
-      sigma_scaled <- sigma/sqrt(stepsize)
+      sigma_scaled <- sigma / sqrt(stepsize)
       epsilon <- rnorm(daysteps, mean = PS$N$mu_N, sd = sigma_scaled)
 
       for(i in 2:(daysteps+1)){
         Nvec[i] <- ((1 - 1/PS$N$lambda_N) * (Nvec[i-1]) + beta*epsilon[i-1])
       }
+      # Nvec <- Nvec * sqrt(stepsize)
       rm(epsilon) # Note: Remove Epsilon
 
       # Re-set maximum day-trackers (set to "floor" of these variables)
