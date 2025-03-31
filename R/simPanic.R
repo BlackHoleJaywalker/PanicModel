@@ -166,6 +166,11 @@ simPanic <- function(time, # integer vector 1:n, indicating the time interval, w
                       r_A = PS$A$r_A,
                       s_PT_A = PS$A$s_PT_A) * stepsize
 
+    #if (time_tracker == 9998) {
+   #   browser()
+  #  }
+
+
     # Minute-intervention on Arousal
     if (!is.null(PS$Tx$minuteP)) {
       if (time_tracker == (PS$Tx$minuteP / stepsize)) Anew <- PS$Tx$strengthP
